@@ -50,6 +50,9 @@ public class TunnelService extends Service {
     /** 实际生效的令牌状态 */
     public static volatile boolean tokenActive = false;
     public static volatile int tokenLen = 0;
+    /** 网关当前真正生效的开关（不是界面上勾选的值）—— 界面靠它区分"已改"和"已生效" */
+    public static volatile boolean headerOnlyActive = false;
+    public static volatile boolean unlimitedAttackActive = false;
     /** 当前真正生效的令牌指纹（SHA-256 前 8 字节 hex），用于判断"改了令牌但没重启" */
     public static volatile String activeTokenSig = "";
 
@@ -171,6 +174,8 @@ public class TunnelService extends Service {
 
     private void startTunnel(Config c) {
         try {
+            headerOnlyActive = c.headerOnly;
+            unlimitedAttackActive = c.unlimitedAttack;
             Logger.log("sys", "===== 启动隧道 =====");
             Logger.log("sys", "参数: 本地端口=" + c.localPort + "  目标=" + c.targetDesc()
                     + "  协议=" + c.protocol + "  edge-ip=" + (c.edgeIpVersion == 0 ? "auto" : c.edgeIpVersion)

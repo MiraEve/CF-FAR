@@ -28,6 +28,9 @@ public class MainActivity extends Activity {
     private android.widget.CheckBox cbUnlimited;
     private TextView tvAuditAlert;
     private android.widget.CheckBox cbHeaderOnly;
+    private TextView tvHeaderOnlyState;
+    private boolean suppressAutoRestart;
+    private long lastSeenBackendFail;
     private int lastSeenAccess = 0;
     private Intent pendingStart;
     private EditText etHost;
@@ -84,10 +87,20 @@ public class MainActivity extends Activity {
         cbUnlimited = (android.widget.CheckBox) findViewById(R.id.cbUnlimited);
         tvAuditAlert = (TextView) findViewById(R.id.tvAuditAlert);
         cbHeaderOnly = (android.widget.CheckBox) findViewById(R.id.cbHeaderOnly);
+        tvHeaderOnlyState = (TextView) findViewById(R.id.tvHeaderOnlyState);
         cbHeaderOnly.setOnCheckedChangeListener(new android.widget.CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(android.widget.CompoundButton b, boolean checked) {
+                // 落盘只是"记住了"，真正决定网关行为的是运行中的那个实例。
+                // 不重启的话，网关仍按启动时的 headerOnly 走 —— 这正是
+                // "我明明关了仅 Header，链接却还是报 401" 的根因。
                 getSharedPreferences("cfg", MODE_PRIVATE).edit()
                         .putBoolean("headerOnly", checked).apply();
+                updateHeaderOnlyState();
+                if (suppressAutoRestart) {
+                    return;
+                }
+                restartIfRunning(checked != TunnelService.headerOnlyActive,
+                        checked ? "仅 Header 鉴权已开启" : "仅 Header 鉴权已关闭");
             }
         });
         updateAuditState();
@@ -97,6 +110,11 @@ public class MainActivity extends Activity {
                 // 勾选状态立刻落盘，不依赖点「启动」
                 getSharedPreferences("cfg", MODE_PRIVATE).edit()
                         .putBoolean("unlimitedAttack", checked).apply();
+                if (suppressAutoRestart) {
+                    return;
+                }
+                restartIfRunning(checked != TunnelService.unlimitedAttackActive,
+                        checked ? "无限攻击测试模式已开启" : "无限攻击测试模式已关闭");
             }
         });
         tvAlert.setOnClickListener(new View.OnClickListener() {
@@ -195,7 +213,59 @@ public class MainActivity extends Activity {
         ui.post(refresher);
     }
 
+    /** 隧道跑着的时候，改了生效条件就自动重启 —— 否则网关用的还是老配置 */
+    private void restartIfRunning(boolean differs, String what) {
+        if (!differs) {
+            updateHeaderOnlyState();
+            return;
+        }
+        boolean running = (TunnelService.state == TunnelService.STATE_STARTING
+                || TunnelService.state == TunnelService.STATE_RUNNING);
+        if (!running) {
+            updateHeaderOnlyState();
+            return;
+        }
+        toast(what + "，正在重启隧道使配置生效…");
+        startTunnel();      // startTunnel 内部发现隧道在跑，会 stop -> 延时 -> start
+    }
+
     private void loadPrefs() {
+        suppressAutoRestart = true;
+        try {
+            loadPrefsInner();
+        } finally {
+            suppressAutoRestart = false;
+        }
+        updateHeaderOnlyState();
+    }
+
+    /** 开关勾选值 vs 网关真正生效值，两者必须能被看见地对齐 */
+    private void updateHeaderOnlyState() {
+        if (tvHeaderOnlyState == null || cbHeaderOnly == null) {
+            return;
+        }
+        boolean want = cbHeaderOnly.isChecked();
+        boolean active = TunnelService.headerOnlyActive;
+        boolean running = (TunnelService.state == TunnelService.STATE_STARTING
+                || TunnelService.state == TunnelService.STATE_RUNNING);
+        if (!running) {
+            tvHeaderOnlyState.setTextColor(0xFF9E9E9E);
+            tvHeaderOnlyState.setText(want
+                    ? "○ 仅 Header（未运行，启动后 ?token= 将被拒绝）"
+                    : "○ 未运行 —— 启动后链接 / Header 都可用");
+        } else if (want != active) {
+            tvHeaderOnlyState.setTextColor(0xFFEF6C00);
+            tvHeaderOnlyState.setText("⚠ 设置与网关不一致，正在重启生效…");
+        } else if (want) {
+            tvHeaderOnlyState.setTextColor(0xFF1565C0);
+            tvHeaderOnlyState.setText("■ 仅 Header 已生效 —— ?token= 一律 401，请用 Header 按钮");
+        } else {
+            tvHeaderOnlyState.setTextColor(0xFF2E7D32);
+            tvHeaderOnlyState.setText("■ 三种方式都可用 —— 链接可直接打开");
+        }
+    }
+
+    private void loadPrefsInner() {
         SharedPreferences sp = getSharedPreferences("cfg", MODE_PRIVATE);
         etLocalPort.setText(String.valueOf(sp.getInt("localPort", 8888)));
         etHost.setText(sp.getString("targetHost", "127.0.0.1"));
@@ -325,6 +395,14 @@ public class MainActivity extends Activity {
     private void refreshStatus() {
         updateTokenState();
         updateAuditState();
+        updateHeaderOnlyState();
+        if (PortForwarder.lastBackendFailAt != lastSeenBackendFail) {
+            lastSeenBackendFail = PortForwarder.lastBackendFailAt;
+            if (lastSeenBackendFail > 0) {
+                tvAlert.setVisibility(View.VISIBLE);
+                tvAlert.setText("✖ " + PortForwarder.lastBackendFailMsg);
+            }
+        }
         if (TunnelService.accessCount != lastSeenAccess) {
             lastSeenAccess = TunnelService.accessCount;
             showAccessAlert();

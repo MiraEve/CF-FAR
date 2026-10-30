@@ -171,6 +171,15 @@
         android:textSize="12sp" />
 
     <TextView
+        android:id="@+id/tvHeaderOnlyState"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="○ 未运行"
+        android:textColor="#9E9E9E"
+        android:textSize="11sp"
+        android:textStyle="bold" />
+
+    <TextView
         android:id="@+id/tvVersion"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

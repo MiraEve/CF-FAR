@@ -50,6 +50,9 @@ public final class PortForwarder {
             new java.util.concurrent.atomic.AtomicInteger();
     private final java.util.concurrent.atomic.AtomicInteger droppedConns =
             new java.util.concurrent.atomic.AtomicInteger();
+    /** 最近一次转发失败：界面用来提示"后端不可达"，避免只看到 Cloudflare 的 502 页面 */
+    public static volatile long lastBackendFailAt = 0L;
+    public static volatile String lastBackendFailMsg = "";
     private volatile ServerSocket server;
     private volatile boolean running;
     private volatile int listenPort;
@@ -302,8 +305,17 @@ public final class PortForwarder {
             up.start();
             down.start();
         } catch (Throwable e) {
-            Logger.log("fwd", "转发失败 -> " + targetHost + ":" + targetPort + " : " + e);
-            closeQuietly(in);
+            String why = e == null ? "unknown" : (e.getClass().getSimpleName()
+                    + (e.getMessage() == null ? "" : (" " + e.getMessage())));
+            Logger.log("fwd", "转发失败 -> " + targetHost + ":" + targetPort + " : " + why);
+            Logger.log("fwd", "后端不可达：隧道和令牌都正常，是目标服务没有监听 "
+                    + targetHost + ":" + targetPort + "（检查目标端口 / 服务是否启动）");
+            lastBackendFailAt = System.currentTimeMillis();
+            lastBackendFailMsg = "后端不可达 —— 令牌和网关都正常，是 " + targetHost + ":"
+                    + targetPort + " 没有响应。检查目标端口和服务是否已启动。";
+            // 不能一声不吭地断开：那样客户端只能看到 Cloudflare 的 502 页面，
+            // 完全无法分辨"令牌不对"还是"后端没起"，会把问题误判成鉴权 bug。
+            reject(in, 502, "{\"error\":\"backend_unreachable\"}");
             closeQuietly(out);
         }
     }
@@ -539,9 +551,23 @@ public final class PortForwarder {
         }
     }
 
+    /** 状态行必须跟状态码一致，否则客户端看到的是自相矛盾的响应 */
+    private static String statusText(int code) {
+        switch (code) {
+            case 401: return "401 Unauthorized";
+            case 404: return "404 Not Found";
+            case 405: return "405 Method Not Allowed";
+            case 429: return "429 Too Many Requests";
+            case 500: return "500 Internal Server Error";
+            case 502: return "502 Bad Gateway";
+            case 504: return "504 Gateway Timeout";
+            default:  return code + " Error";
+        }
+    }
+
     private void reject(Socket in, int code, String body) {
         try {
-            String status = code == 429 ? "429 Too Many Requests" : "401 Unauthorized";
+            String status = statusText(code);
             String resp = "HTTP/1.1 " + status + "\r\n"
                     + "Content-Type: application/json\r\n"
                     + "Content-Length: " + body.length() + "\r\n"

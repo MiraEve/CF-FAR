@@ -2,6 +2,44 @@
 
 All notable changes to CF-FAR. Versions follow `MAJOR.MINOR`, `versionCode` is monotonic.
 
+## [1.16] — 2026-10-31
+
+Two defects found while auditing why "turn off header-only, then open the link" failed.
+
+### Fixed
+- **Switching `headerOnly` (or `unlimitedAttack`) while the tunnel was running did nothing.**
+  The listener only wrote the value to `SharedPreferences`. What the gateway actually enforces is
+  the `headerOnly` field inside the **running** `PortForwarder`, which is set once at start time.
+  So the UI said one thing, the prefs said another, and the gateway kept doing whatever it was
+  doing at launch — the user turns the switch off and `?token=` still returns 401.
+  Both switches now compare the requested value against `TunnelService.headerOnlyActive` /
+  `unlimitedAttackActive` and **restart the tunnel automatically** when they differ, reusing the
+  existing stop → delay → start path. When the tunnel is not running there is nothing to sync, so
+  it only persists. `loadPrefs()` sets `suppressAutoRestart` so an Activity being recreated does
+  not trigger a pointless restart.
+- **Forwarding failures were silent.** `handle()` caught the exception, logged it, and called
+  `closeQuietly(in)` without writing any HTTP response. The client (and Cloudflare) therefore only
+  ever saw Cloudflare's own `trycloudflare.com | 502` HTML page — indistinguishable from an auth
+  problem to anyone looking at it, which is exactly how this got misreported as an auth-mode bug.
+  It now returns a JSON 502 `{"error":"backend_unreachable"}` and surfaces
+  `后端不可达 —— 令牌和网关都正常，是 host:port 没有响应` in the red alert banner.
+- **`reject()` only ever wrote `401 Unauthorized` or `429 Too Many Requests` as the status line.**
+  Passing any other code produced a response whose status line contradicted its own status code.
+  Replaced with `statusText(code)` covering 401/404/405/429/500/502/504.
+
+### Added
+- **`tvHeaderOnlyState`**: a line under the switch that reports the *gateway's* effective mode, not
+  just the checkbox — grey when idle, blue `■ 仅 Header 已生效 —— ?token= 一律 401`, green
+  `■ 三种方式都可用 —— 链接可直接打开`, and orange `⚠ 设置与网关不一致，正在重启生效…` if the
+  two ever disagree. The state can no longer be silently inconsistent without being visible.
+
+### Diagnosis note
+Live evidence from the reported instance (7 interleaved rounds):
+`无凭证 → 401` every time, `带令牌 → 502` every time. That proves the gateway was alive, the
+auth layer was rejecting correctly, and `?token=` **was** being accepted (otherwise it would have
+been 401, not 502) — so the switch itself had taken effect there and the visible failure was the
+downstream service not listening. Both the mode-sync bug and the silent-failure bug are now fixed.
+
 ## [1.15] — 2026-10-30
 
 Hardening after a fourth round of adversarial testing (55 auth-bypass cases, request
