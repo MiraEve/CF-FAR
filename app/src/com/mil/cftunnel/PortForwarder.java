@@ -33,6 +33,10 @@ public final class PortForwarder {
     }
 
     private static final int MAX_HEAD = 32 * 1024;
+    /** 最大并发连接数：防止慢速连接把线程和内存吃光（cachedThreadPool 本身无上限） */
+    private static final int MAX_CONN = 120;
+    /** 从建连到读完请求头的总时限，防 Slowloris 一点一点滴头无限占用 */
+    private static final int HEAD_DEADLINE_MS = 5000;
     /** 防爆破：连续失败 5 次锁定 60 秒 */
     private static final int MAX_FAIL = 5;
     private static final long LOCK_MS = 60L * 1000L;
@@ -42,6 +46,10 @@ public final class PortForwarder {
     private volatile long lockUntil = 0L;
 
     private ExecutorService pool = newPool();
+    private final java.util.concurrent.atomic.AtomicInteger liveConns =
+            new java.util.concurrent.atomic.AtomicInteger();
+    private final java.util.concurrent.atomic.AtomicInteger droppedConns =
+            new java.util.concurrent.atomic.AtomicInteger();
     private volatile ServerSocket server;
     private volatile boolean running;
     private volatile int listenPort;
@@ -114,9 +122,26 @@ public final class PortForwarder {
                 while (running && ss != null) {
                     try {
                         final Socket in = ss.accept();
+                        if (liveConns.incrementAndGet() > MAX_CONN) {
+                            liveConns.decrementAndGet();
+                            try {
+                                in.close();
+                            } catch (Throwable ignored) {
+                            }
+                            int d = droppedConns.incrementAndGet();
+                            if (d == 1 || d % 50 == 0) {
+                                Logger.log("fwd", "并发连接已达上限 " + MAX_CONN
+                                        + "，已丢弃新连接（累计 " + d + " 次）");
+                            }
+                            continue;
+                        }
                         pool.execute(new Runnable() {
                             public void run() {
-                                handle(in);
+                                try {
+                                    handle(in);
+                                } finally {
+                                    liveConns.decrementAndGet();
+                                }
                             }
                         });
                     } catch (Throwable e) {
@@ -147,7 +172,7 @@ public final class PortForwarder {
             String tk = token;
 
             if (tk != null && tk.length() > 0) {
-                in.setSoTimeout(8000);
+                in.setSoTimeout(HEAD_DEADLINE_MS);
                 head = readHttpHead(in);
                 in.setSoTimeout(0);
 
@@ -286,10 +311,14 @@ public final class PortForwarder {
     /** 读取 HTTP 请求头（直到 \r\n\r\n），失败返回 null */
     private byte[] readHttpHead(Socket s) {
         try {
+            long start = System.currentTimeMillis();
             InputStream is = s.getInputStream();
             ByteArrayOutputStream bo = new ByteArrayOutputStream(2048);
             byte[] buf = new byte[2048];
             while (bo.size() < MAX_HEAD) {
+                if (System.currentTimeMillis() - start > HEAD_DEADLINE_MS) {
+                    return null;    // 滴得太慢，放弃，别占着线程
+                }
                 int n = is.read(buf);
                 if (n < 0) {
                     break;

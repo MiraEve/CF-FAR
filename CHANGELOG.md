@@ -2,6 +2,35 @@
 
 All notable changes to CF-FAR. Versions follow `MAJOR.MINOR`, `versionCode` is monotonic.
 
+## [1.15] — 2026-10-30
+
+Hardening after a fourth round of adversarial testing (55 auth-bypass cases, request
+smuggling, CRLF injection, 100-connection slowloris, 50-way concurrency). Nothing was
+bypassable; the two changes below close resource-exhaustion surface found by reading the
+connection handling rather than by breaking in.
+
+### Security
+- **Bounded concurrent connections (`MAX_CONN = 120`).** The worker pool is a
+  `newCachedThreadPool()`, which creates threads without limit. Nothing *above* it capped how many
+  connections could arrive, so a flood of half-open connections would create one thread each until
+  the process died. There is now an `AtomicInteger` gate in the accept loop: past 120 live
+  connections the socket is closed immediately and a counter is logged (first drop, then every
+  50th, so the log cannot itself be used as a flood amplifier). The counter is decremented in a
+  `finally` block, so it cannot drift — verified with a 5000-iteration leak test.
+- **Total deadline for reading request headers (`HEAD_DEADLINE_MS = 5000`).** `SoTimeout` alone
+  only bounds *each* `read()`, so a client dripping one byte every few seconds held a worker
+  thread indefinitely (classic Slowloris). The clock now starts at connect and the head is
+  abandoned after 5 s regardless of how the bytes trickle in. `SoTimeout` was aligned to the same
+  5 s.
+
+### Notes
+- Measured: 100 concurrent slowloris connections did **not** degrade service (0.79–0.98 s for
+  normal requests) because Cloudflare terminates them first. The change is defence in depth for
+  the paths Cloudflare does not cover — a local app on the same device, or any future change in
+  edge behaviour.
+- Rejected head reads do **not** count toward the 5-strike lockout, so a slowloris flood cannot be
+  used to lock the legitimate owner out.
+
 ## [1.14] — 2026-10-30
 
 ### Added
