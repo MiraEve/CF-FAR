@@ -1,0 +1,43 @@
+name: Bug report
+description: Something in the app or the gateway misbehaves
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not report security vulnerabilities here.** See [SECURITY.md](../blob/main/SECURITY.md).
+
+        Before posting logs, remove your tunnel hostname and token — they are credentials
+        for as long as the tunnel is running.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you expected, and what you got instead.
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Relevant log lines
+      description: Copy from the in-app log view (the share button is fine). Redact the token.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      placeholder: "1.11"
+    validations:
+      required: true
+  - type: dropdown
+    id: proto
+    attributes:
+      label: Tunnel protocol
+      options: ["HTTP2 (default)", "QUIC", "not sure"]
+    validations:
+      required: true
+  - type: input
+    id: android
+    attributes:
+      label: Android version and device
+      placeholder: "Android 9, Redmi Note 7"
