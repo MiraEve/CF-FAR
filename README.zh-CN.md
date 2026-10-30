@@ -156,17 +156,6 @@ Cloudflare 边缘  ──隧道 (HTTP/2)──►  cloudflared（内嵌，已打
 
 ---
 
-## 赞助
-
-如果 CF-FAR 帮你省了时间，可以考虑支持开发：
-
-- **GitHub Sponsors** —— 见 [.github/FUNDING.yml](.github/FUNDING.yml)
-- 也可以开一个标题为 `sponsor` 的 issue 询问其他渠道
-
-赞助完全自愿，项目保持 MIT 协议、功能不设限。
-
----
-
 ## 免责声明
 
 CF-FAR 用于把**你自己的**服务临时暴露出去做远程访问。

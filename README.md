@@ -166,17 +166,6 @@ Bundled third-party components (full text in [NOTICE](NOTICE)):
 
 ---
 
-## Sponsorship
-
-If CF-FAR saves you time, consider supporting its development:
-
-- **GitHub Sponsors** — see [.github/FUNDING.yml](.github/FUNDING.yml)
-- Open an issue titled `sponsor` for other channels
-
-Sponsorship is optional. The project stays MIT-licensed and fully functional either way.
-
----
-
 ## Disclaimer
 
 CF-FAR is intended for exposing **your own** services for **temporary** remote access.
