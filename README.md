@@ -7,6 +7,7 @@ Cloudflare Quick Tunnel — no account, no domain, no server required. Ships wit
 token gateway, brute-force protection and a live access log.
 
 [English](README.md) · [简体中文](README.zh-CN.md)
+
 ## ⬇️ Download
 
 [![Download APK](https://img.shields.io/badge/⬇_Download-CfTunnel--v1.11.apk-2ea44f?style=for-the-badge&logo=android&logoColor=white)](https://github.com/MiraEve/CF-FAR/releases/latest/download/CfTunnel-v1.11.apk)
