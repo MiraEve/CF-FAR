@@ -138,8 +138,9 @@
 
     <RadioGroup
         android:id="@+id/rgProtocol"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_weight="1"
         android:orientation="horizontal">
 
         <RadioButton
@@ -158,14 +159,29 @@
             android:textSize="12sp" />
     </RadioGroup>
 
-        <CheckBox
-            android:id="@+id/cbUnlimited"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="无限攻击"
-            android:textColor="#D50000"
-            android:textSize="11sp" />
     </LinearLayout>
+
+    <CheckBox
+        android:id="@+id/cbUnlimited"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="无限攻击（关闭防爆破锁定，用于渗透测试）"
+        android:textColor="#D50000"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/tvAuditAlert"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:background="#FFF3E0"
+        android:padding="6dp"
+        android:text="⚠ 无限攻击模式已开启：防爆破锁定已关闭，令牌错误可无限次尝试。取消勾选上方「无限攻击」即可恢复。"
+        android:textColor="#EF6C00"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
 
     <LinearLayout
         android:layout_width="match_parent"

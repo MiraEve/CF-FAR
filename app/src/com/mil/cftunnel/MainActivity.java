@@ -26,6 +26,7 @@ public class MainActivity extends Activity {
     private TextView tvTokenState;
     private TextView tvVersion;
     private android.widget.CheckBox cbUnlimited;
+    private TextView tvAuditAlert;
     private int lastSeenAccess = 0;
     private Intent pendingStart;
     private EditText etHost;
@@ -80,6 +81,16 @@ public class MainActivity extends Activity {
         tvVersion = (TextView) findViewById(R.id.tvVersion);
         tvVersion.setText("v" + appVersion() + " · " + android.os.Build.SUPPORTED_ABIS[0]);
         cbUnlimited = (android.widget.CheckBox) findViewById(R.id.cbUnlimited);
+        tvAuditAlert = (TextView) findViewById(R.id.tvAuditAlert);
+        updateAuditState();
+        cbUnlimited.setOnCheckedChangeListener(new android.widget.CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged(android.widget.CompoundButton b, boolean checked) {
+                updateAuditState();
+                // 勾选状态立刻落盘，不依赖点「启动」
+                getSharedPreferences("cfg", MODE_PRIVATE).edit()
+                        .putBoolean("unlimitedAttack", checked).apply();
+            }
+        });
         tvAlert.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 tvAlert.setVisibility(View.GONE);
@@ -190,6 +201,7 @@ public class MainActivity extends Activity {
                 .putInt("targetPort", c.targetPort)
                 .putString("protocol", c.protocol)
                 .putString("token", c.token)
+                .putBoolean("unlimitedAttack", c.unlimitedAttack)
                 .apply();
     }
 
@@ -280,8 +292,17 @@ public class MainActivity extends Activity {
         tvState.setText("状态: 停止中 ...");
     }
 
+    /** 审计模式提示条：勾选才显示，明确告诉用户已关闭防爆破以及怎么关回去 */
+    private void updateAuditState() {
+        if (tvAuditAlert == null || cbUnlimited == null) {
+            return;
+        }
+        tvAuditAlert.setVisibility(cbUnlimited.isChecked() ? View.VISIBLE : View.GONE);
+    }
+
     private void refreshStatus() {
         updateTokenState();
+        updateAuditState();
         if (TunnelService.accessCount != lastSeenAccess) {
             lastSeenAccess = TunnelService.accessCount;
             showAccessAlert();

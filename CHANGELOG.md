@@ -2,6 +2,25 @@
 
 All notable changes to CF-FAR. Versions follow `MAJOR.MINOR`, `versionCode` is monotonic.
 
+## [1.13] — 2026-10-30
+
+### Fixed
+- **The "无限攻击" (audit mode) switch was pushed off the right edge of the screen and could
+  not be tapped — so once enabled it could never be turned off.** The protocol `RadioGroup`
+  was declared `layout_width="match_parent"` inside a horizontal `LinearLayout`, which made it
+  consume the full row width and squeezed the following `CheckBox` outside the viewport. The
+  `RadioGroup` now uses `0dp` + `layout_weight="1"`, and the audit switch has been moved to its
+  own row so it stays reachable on any screen width.
+- **Audit mode was never persisted.** `loadPrefs()` read `unlimitedAttack` from
+  `SharedPreferences` but `savePrefs()` never wrote it — so a `true` value written by an older
+  build was read back forever with no way to clear it from the UI. It is now written on every
+  toggle (immediately, not only on Start) and on every Start.
+
+### Added
+- An orange banner under the switch whenever audit mode is on, stating explicitly that the
+  brute-force lockout is disabled and how to turn it back on. The switch label now reads
+  `无限攻击（关闭防爆破锁定，用于渗透测试）` instead of just `无限攻击`.
+
 ## [1.12] — 2026-10-30
 
 ### Fixed
