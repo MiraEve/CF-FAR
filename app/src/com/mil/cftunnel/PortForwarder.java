@@ -48,6 +48,8 @@ public final class PortForwarder {
     private volatile String targetHost;
     private volatile int targetPort;
     private volatile String token = "";
+    /** 仅 Header 鉴权：true 时忽略 ?token=，只认 Authorization / X-Auth-Token */
+    private volatile boolean headerOnly = false;
     private volatile boolean unlimitedAttack = false;
     private volatile AccessListener listener;
 
@@ -70,7 +72,7 @@ public final class PortForwarder {
     }
 
     public void start(int listenPort, String host, int port, String token, boolean unlimitedAttack,
-                      AccessListener listener) throws Exception {
+                      boolean headerOnly, AccessListener listener) throws Exception {
         stop();
         if (pool == null || pool.isShutdown()) {
             pool = newPool();
@@ -80,6 +82,7 @@ public final class PortForwarder {
         this.targetPort = port;
         this.token = token == null ? "" : token.trim();
         this.unlimitedAttack = unlimitedAttack;
+        this.headerOnly = headerOnly;
         this.failCount.set(0);
         this.lockUntil = 0L;
         this.listener = listener;
@@ -95,7 +98,12 @@ public final class PortForwarder {
                 Logger.log("fwd", "本地转发就绪  127.0.0.1:" + PortForwarder.this.listenPort
                         + "  ->  " + PortForwarder.this.targetHost + ":" + PortForwarder.this.targetPort);
                 if (PortForwarder.this.token.length() > 0) {
-                    Logger.log("fwd", "访问令牌已启用：放行 ?token= / Authorization: Bearer / X-Auth-Token");
+                    if (PortForwarder.this.headerOnly) {
+                        Logger.log("fwd", "访问令牌已启用（仅 Header 模式）：只放行 Authorization: Bearer / X-Auth-Token"
+                                + "  —— ?token= 已禁用，防止令牌经 URL / 日志 / Referer 泄露");
+                    } else {
+                        Logger.log("fwd", "访问令牌已启用：放行 ?token= / Authorization: Bearer / X-Auth-Token");
+                    }
                 } else {
                     Logger.log("fwd", "访问令牌未启用：任何人拿到地址即可访问");
                 }
@@ -411,6 +419,9 @@ public final class PortForwarder {
                     }
                 }
             }
+            if (headerOnly) {
+                return false;   // 仅 Header 模式：URL 里的令牌一律不认
+            }
             String qv = queryParam(path, "token");
             if (qv != null) {
                 if (qv.equals(tk)) {
@@ -615,3 +626,4 @@ public final class PortForwarder {
         }
     }
 }
+

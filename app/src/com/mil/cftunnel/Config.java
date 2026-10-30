@@ -15,6 +15,8 @@ public final class Config {
     public String token = "";
     /** 无限攻击测试模式：关闭防爆破锁定 */
     public boolean unlimitedAttack = false;
+    /** 仅 Header 鉴权：拒绝 ?token= 查询参数，避免令牌出现在 URL/日志/Referer 里 */
+    public boolean headerOnly = false;
 
     public String localUrl() {
         return "http://127.0.0.1:" + localPort;
@@ -24,3 +26,4 @@ public final class Config {
         return targetHost + ":" + targetPort;
     }
 }
+

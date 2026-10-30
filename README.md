@@ -10,20 +10,20 @@ token gateway, brute-force protection and a live access log.
 
 ## ⬇️ Download
 
-[![Download APK](https://img.shields.io/badge/⬇_Download-CfTunnel--v1.13.apk-2ea44f?style=for-the-badge&logo=android&logoColor=white)](https://github.com/MiraEve/CF-FAR/releases/latest/download/CfTunnel-v1.13.apk)
+[![Download APK](https://img.shields.io/badge/⬇_Download-CfTunnel--v1.14.apk-2ea44f?style=for-the-badge&logo=android&logoColor=white)](https://github.com/MiraEve/CF-FAR/releases/latest/download/CfTunnel-v1.14.apk)
 [![Latest release](https://img.shields.io/github/v/release/MiraEve/CF-FAR?style=for-the-badge&label=release&color=blue)](https://github.com/MiraEve/CF-FAR/releases/latest)
 [![License](https://img.shields.io/github/license/MiraEve/CF-FAR?style=for-the-badge&color=orange)](LICENSE)
 
-**Download:** [`CfTunnel-v1.13.apk`](https://github.com/MiraEve/CF-FAR/releases/latest/download/CfTunnel-v1.13.apk) · 18 MB · arm64-v8a · Android 9+
+**Download:** [`CfTunnel-v1.14.apk`](https://github.com/MiraEve/CF-FAR/releases/latest/download/CfTunnel-v1.14.apk) · 18 MB · arm64-v8a · Android 9+
 
 > There is no APK in the source tree on purpose — binaries live in
-> **[Releases](https://github.com/MiraEve/CF-FAR/releases/latest)**. Pick `CfTunnel-v1.13.apk` under *Assets*.
+> **[Releases](https://github.com/MiraEve/CF-FAR/releases/latest)**. Pick `CfTunnel-v1.14.apk` under *Assets*.
 
 **Install:** download → allow *install unknown apps* → open → set local port → **Start tunnel** → **Copy URL + token**.
 
 Verify the download:
 ```bash
-sha256sum CfTunnel-v1.13.apk
+sha256sum CfTunnel-v1.14.apk
 # f65ae1df7290e54f9ac97548a68e73938450b2ee40933530f36286dd4b4eb7ed
 ```
 
@@ -53,6 +53,8 @@ On top of that, CF-FAR adds the layer that Quick Tunnels lack: **access control*
 - **Any local port** — the listening port is fully configurable (`127.0.0.1:<your port>`)
 - **LAN targets** — forward to `127.0.0.1` or any address reachable from the phone (`192.168.x.x`)
 - **Token gateway** — reject unauthenticated requests *before* they reach your service
+- **Three auth carriers, one button each** — `?token=` (clickable link, for temporary sharing), `Authorization: Bearer` (clean URL, for long-lived access) and a ready-made `curl` command
+- **Header-only mode** — a switch that makes the gateway **reject `?token=` entirely**, so the token can never leak through URLs, access logs, browser history or `Referer`
 - **Brute-force protection** — 5 consecutive failures → 60 s lockout (`429` + `Retry-After`)
 - **Audit mode** — a switch that disables the lockout so you can run unlimited penetration tests
 - **Live access alerts** — a red banner appears the moment someone connects, with the **real client IP** (`CF-Connecting-IP`)

@@ -2,6 +2,32 @@
 
 All notable changes to CF-FAR. Versions follow `MAJOR.MINOR`, `versionCode` is monotonic.
 
+## [1.14] — 2026-10-30
+
+### Added
+- **Three authentication carriers, with a button for each.** Next to the tunnel URL there are now
+  three buttons and a one-line hint (`链接 · Header · curl`):
+  - **链接** — copies `https://…trycloudflare.com/?token=…`. Shortest to share, clickable in any
+    browser. Use it for temporary access.
+  - **Header** — copies `Authorization: Bearer <token>`. The URL stays clean; paste the header into
+    Postman / your client / a reverse proxy. Use it for long-lived access.
+  - **curl** — copies a ready-to-run command: `curl -i -H "Authorization: Bearer <token>" https://…/`
+- **"仅 Header 鉴权" switch (header-only mode).** When enabled, the gateway **rejects `?token=`
+  outright** and accepts only `Authorization: Bearer` / `X-Auth-Token`. This is the mode to use when
+  the URL might end up somewhere you do not control — Cloudflare's request logs, browser history,
+  `Referer` headers of pages that link to it, or a screenshot. With header-only on, leaking the URL
+  reveals nothing, because the token never appears in it.
+  The "链接" button also stops appending the token in this mode, so the two cannot drift apart.
+- Startup log now prints the effective auth mode, so a running instance can be audited:
+  `鉴权=仅Header（URL令牌禁用）` or `鉴权=URL+Header`.
+
+### Notes
+- All three carriers were already accepted by the gateway since v1.1; this release makes them
+  equally *usable* and adds the switch that removes the weakest one from the picture.
+- Verified with a 13-case logic test: with `headerOnly = false` all three carriers work and
+  near-misses (token + suffix, wrong scheme) are rejected; with `headerOnly = true` a correct
+  `?token=` is rejected while a correct header still passes.
+
 ## [1.13] — 2026-10-30
 
 ### Fixed

@@ -27,6 +27,7 @@ public class MainActivity extends Activity {
     private TextView tvVersion;
     private android.widget.CheckBox cbUnlimited;
     private TextView tvAuditAlert;
+    private android.widget.CheckBox cbHeaderOnly;
     private int lastSeenAccess = 0;
     private Intent pendingStart;
     private EditText etHost;
@@ -82,6 +83,13 @@ public class MainActivity extends Activity {
         tvVersion.setText("v" + appVersion() + " · " + android.os.Build.SUPPORTED_ABIS[0]);
         cbUnlimited = (android.widget.CheckBox) findViewById(R.id.cbUnlimited);
         tvAuditAlert = (TextView) findViewById(R.id.tvAuditAlert);
+        cbHeaderOnly = (android.widget.CheckBox) findViewById(R.id.cbHeaderOnly);
+        cbHeaderOnly.setOnCheckedChangeListener(new android.widget.CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged(android.widget.CompoundButton b, boolean checked) {
+                getSharedPreferences("cfg", MODE_PRIVATE).edit()
+                        .putBoolean("headerOnly", checked).apply();
+            }
+        });
         updateAuditState();
         cbUnlimited.setOnCheckedChangeListener(new android.widget.CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(android.widget.CompoundButton b, boolean checked) {
@@ -146,6 +154,16 @@ public class MainActivity extends Activity {
                 copyUrlWithToken();
             }
         });
+        findViewById(R.id.btnCopyHeader).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                copyHeaderToken();
+            }
+        });
+        findViewById(R.id.btnCopyCurl).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                copyCurl();
+            }
+        });
         findViewById(R.id.btnCopyLog).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 copy(Logger.dump());
@@ -184,6 +202,7 @@ public class MainActivity extends Activity {
         etTargetPort.setText(String.valueOf(sp.getInt("targetPort", 8080)));
         etToken.setText(sp.getString("token", ""));
         cbUnlimited.setChecked(sp.getBoolean("unlimitedAttack", false));
+        cbHeaderOnly.setChecked(sp.getBoolean("headerOnly", false));
         String p = sp.getString("protocol", "http2");
         if ("quic".equals(p)) {
             rgProtocol.check(R.id.rbQuic);
@@ -202,6 +221,7 @@ public class MainActivity extends Activity {
                 .putString("protocol", c.protocol)
                 .putString("token", c.token)
                 .putBoolean("unlimitedAttack", c.unlimitedAttack)
+                .putBoolean("headerOnly", c.headerOnly)
                 .apply();
     }
 
@@ -249,6 +269,7 @@ public class MainActivity extends Activity {
         c.protocol = rgProtocol.getCheckedRadioButtonId() == R.id.rbQuic ? "quic" : "http2";
         c.token = etToken.getText().toString().trim();
         c.unlimitedAttack = cbUnlimited.isChecked();
+        c.headerOnly = cbHeaderOnly.isChecked();
         c.keepAwake = true;
         savePrefs(c);
 
@@ -261,6 +282,7 @@ public class MainActivity extends Activity {
         i.putExtra("keepAwake", c.keepAwake);
         i.putExtra("token", c.token);
         i.putExtra("unlimitedAttack", c.unlimitedAttack);
+        i.putExtra("headerOnly", c.headerOnly);
         pendingStart = i;
 
         boolean running = (TunnelService.state == TunnelService.STATE_STARTING
@@ -396,6 +418,7 @@ public class MainActivity extends Activity {
         return sb.toString();
     }
 
+    /** 方式一：短链式（?token=）。临时发给别人最省事，代价是令牌进 URL / 日志 / Referer。 */
     private void copyUrlWithToken() {
         String u = TunnelService.publicUrl;
         if (u == null || u.length() == 0) {
@@ -408,6 +431,11 @@ public class MainActivity extends Activity {
             toast("地址已复制（未启用令牌）");
             return;
         }
+        if (cbHeaderOnly.isChecked()) {
+            copy(u);
+            toast("仅 Header 模式：只复制地址，令牌请用「Header」按钮");
+            return;
+        }
         String enc;
         try {
             enc = java.net.URLEncoder.encode(t, "UTF-8");
@@ -415,7 +443,40 @@ public class MainActivity extends Activity {
             enc = t;
         }
         copy(u + (u.indexOf('?') >= 0 ? "&" : "?") + "token=" + enc);
-        toast("地址 + 令牌 已一并复制");
+        toast("地址 + 令牌已复制（临时分享用）");
+    }
+
+    /** 方式二：只复制请求头，URL 保持干净，适合长期使用 */
+    private void copyHeaderToken() {
+        String t = etToken.getText().toString().trim();
+        if (t.length() == 0) {
+            toast("令牌为空，先点「随机」生成一个");
+            return;
+        }
+        copy("Authorization: Bearer " + t);
+        toast("已复制请求头 —— Authorization: Bearer " + maskToken(t));
+    }
+
+    /** 方式三：复制可直接粘贴执行的 curl 命令 */
+    private void copyCurl() {
+        String u = TunnelService.publicUrl;
+        if (u == null || u.length() == 0) {
+            toast("还没有生成隧道地址");
+            return;
+        }
+        String t = etToken.getText().toString().trim();
+        String cmd = t.length() == 0
+                ? "curl -i \"" + u + "/\""
+                : "curl -i -H \"Authorization: Bearer " + t + "\" \"" + u + "/\"";
+        copy(cmd);
+        toast("curl 命令已复制，可直接在终端粘贴执行");
+    }
+
+    private String maskToken(String t) {
+        if (t.length() <= 8) {
+            return "****";
+        }
+        return t.substring(0, 4) + "****" + t.substring(t.length() - 2);
     }
 
     /**

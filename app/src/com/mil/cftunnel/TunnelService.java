@@ -123,6 +123,7 @@ public class TunnelService extends Service {
         c.keepAwake = sp.getBoolean("keepAwake", true);
         c.token = sp.getString("token", "");
         c.unlimitedAttack = sp.getBoolean("unlimitedAttack", false);
+        c.headerOnly = sp.getBoolean("headerOnly", false);
         c.token = sp.getString("token", "");
 
         if (i != null && i.hasExtra("localPort")) {
@@ -173,7 +174,8 @@ public class TunnelService extends Service {
             Logger.log("sys", "===== 启动隧道 =====");
             Logger.log("sys", "参数: 本地端口=" + c.localPort + "  目标=" + c.targetDesc()
                     + "  协议=" + c.protocol + "  edge-ip=" + (c.edgeIpVersion == 0 ? "auto" : c.edgeIpVersion)
-                    + "  无限攻击=" + (c.unlimitedAttack ? "开" : "关"));
+                    + "  无限攻击=" + (c.unlimitedAttack ? "开" : "关")
+                    + "  鉴权=" + (c.headerOnly ? "仅Header（URL令牌禁用）" : "URL+Header"));
 
             if (!isSupportedAbi()) {
                 fail("当前设备不是 arm64 架构，内置的 cloudflared 无法运行（ABI: " + abiList() + "）");
@@ -213,6 +215,7 @@ public class TunnelService extends Service {
 
             try {
                 forwarder.start(c.localPort, c.targetHost, c.targetPort, c.token, c.unlimitedAttack,
+                        c.headerOnly,
                         new PortForwarder.AccessListener() {
                             public void onAccess(String method, String path, boolean allowed, String clientIp) {
                                 accessCount++;

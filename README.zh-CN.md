@@ -8,19 +8,19 @@
 
 ## ⬇️ 下载
 
-[![下载 APK](https://img.shields.io/badge/⬇_下载-CfTunnel--v1.13.apk-2ea44f?style=for-the-badge&logo=android&logoColor=white)](https://github.com/MiraEve/CF-FAR/releases/latest/download/CfTunnel-v1.13.apk)
+[![下载 APK](https://img.shields.io/badge/⬇_下载-CfTunnel--v1.14.apk-2ea44f?style=for-the-badge&logo=android&logoColor=white)](https://github.com/MiraEve/CF-FAR/releases/latest/download/CfTunnel-v1.14.apk)
 [![最新版本](https://img.shields.io/github/v/release/MiraEve/CF-FAR?style=for-the-badge&label=%E7%89%88%E6%9C%AC&color=blue)](https://github.com/MiraEve/CF-FAR/releases/latest)
 [![开源协议](https://img.shields.io/github/license/MiraEve/CF-FAR?style=for-the-badge&label=%E5%8D%8F%E8%AE%AE&color=orange)](LICENSE)
 
-**下载地址：** [`CfTunnel-v1.13.apk`](https://github.com/MiraEve/CF-FAR/releases/latest/download/CfTunnel-v1.13.apk) · 18 MB · arm64-v8a · Android 9+
+**下载地址：** [`CfTunnel-v1.14.apk`](https://github.com/MiraEve/CF-FAR/releases/latest/download/CfTunnel-v1.14.apk) · 18 MB · arm64-v8a · Android 9+
 
-> 源码树里**故意不放 APK**，二进制统一放在 **[Releases](https://github.com/MiraEve/CF-FAR/releases/latest)** 页面。打开后在 *Assets* 里点 `CfTunnel-v1.13.apk` 即可。
+> 源码树里**故意不放 APK**，二进制统一放在 **[Releases](https://github.com/MiraEve/CF-FAR/releases/latest)** 页面。打开后在 *Assets* 里点 `CfTunnel-v1.14.apk` 即可。
 
 **安装：** 下载 → 允许「安装未知来源应用」→ 打开 → 设置本地端口 → **启动隧道** → **复制地址 + 令牌**。
 
 校验下载文件：
 ```bash
-sha256sum CfTunnel-v1.13.apk
+sha256sum CfTunnel-v1.14.apk
 # f65ae1df7290e54f9ac97548a68e73938450b2ee40933530f36286dd4b4eb7ed
 ```
 
@@ -49,6 +49,8 @@ sha256sum CfTunnel-v1.13.apk
 - **本地端口随便改** —— 监听端口完全可配置（`127.0.0.1:<你定的端口>`）
 - **支持局域网目标** —— 转发到 `127.0.0.1`，也可以转发到手机能访问的 `192.168.x.x`
 - **访问令牌网关** —— 未通过鉴权的请求**在到达你的服务之前**就被拒掉
+- **三种令牌携带方式，各有按钮** —— `?token=`（点开即用的短链，适合临时分享）、`Authorization: Bearer`（URL 保持干净，适合长期使用）、可直接执行的 `curl` 命令
+- **仅 Header 模式** —— 一个开关让网关**彻底拒绝 `?token=`**，令牌再也不可能通过 URL、访问日志、浏览器历史或 `Referer` 泄露
 - **防爆破** —— 连续 5 次失败 → 锁定 60 秒（返回 `429` + `Retry-After`）
 - **审计模式** —— 一个开关关掉锁定，方便跑无限次渗透测试
 - **实时访问提醒** —— 有人连入时立刻弹红色横幅，并显示**真实来源 IP**（取自 `CF-Connecting-IP`）

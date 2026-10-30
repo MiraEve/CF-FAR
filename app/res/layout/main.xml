@@ -29,6 +29,46 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="2dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnCopyUrl"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="链接"
+            android:textSize="11sp" />
+
+        <Button
+            android:id="@+id/btnCopyHeader"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Header"
+            android:textSize="11sp" />
+
+        <Button
+            android:id="@+id/btnCopyCurl"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="curl"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tvCopyHint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="4dp"
+        android:text="链接=最短可点击（临时）· Header=长期使用 · curl=终端直连"
+        android:textColor="#9E9E9E"
+        android:textSize="10sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
@@ -121,6 +161,15 @@
         android:textSize="12sp"
         android:textStyle="bold" />
 
+    <CheckBox
+        android:id="@+id/cbHeaderOnly"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="仅 Header 鉴权（禁用 ?token= · 长期使用，防止令牌经 URL 泄露）"
+        android:textColor="#1565C0"
+        android:textSize="12sp" />
+
     <TextView
         android:id="@+id/tvVersion"
         android:layout_width="match_parent"
@@ -207,14 +256,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal">
-
-        <Button
-            android:id="@+id/btnCopyUrl"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="复制地址"
-            android:textSize="11sp" />
 
         <Button
             android:id="@+id/btnCopyLog"
