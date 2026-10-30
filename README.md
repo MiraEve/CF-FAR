@@ -10,20 +10,20 @@ token gateway, brute-force protection and a live access log.
 
 ## ⬇️ Download
 
-[![Download APK](https://img.shields.io/badge/⬇_Download-CfTunnel--v1.11.apk-2ea44f?style=for-the-badge&logo=android&logoColor=white)](https://github.com/MiraEve/CF-FAR/releases/latest/download/CfTunnel-v1.11.apk)
+[![Download APK](https://img.shields.io/badge/⬇_Download-CfTunnel--v1.12.apk-2ea44f?style=for-the-badge&logo=android&logoColor=white)](https://github.com/MiraEve/CF-FAR/releases/latest/download/CfTunnel-v1.12.apk)
 [![Latest release](https://img.shields.io/github/v/release/MiraEve/CF-FAR?style=for-the-badge&label=release&color=blue)](https://github.com/MiraEve/CF-FAR/releases/latest)
 [![License](https://img.shields.io/github/license/MiraEve/CF-FAR?style=for-the-badge&color=orange)](LICENSE)
 
-**Download:** [`CfTunnel-v1.11.apk`](https://github.com/MiraEve/CF-FAR/releases/latest/download/CfTunnel-v1.11.apk) · 18 MB · arm64-v8a · Android 9+
+**Download:** [`CfTunnel-v1.12.apk`](https://github.com/MiraEve/CF-FAR/releases/latest/download/CfTunnel-v1.12.apk) · 18 MB · arm64-v8a · Android 9+
 
 > There is no APK in the source tree on purpose — binaries live in
-> **[Releases](https://github.com/MiraEve/CF-FAR/releases/latest)**. Pick `CfTunnel-v1.11.apk` under *Assets*.
+> **[Releases](https://github.com/MiraEve/CF-FAR/releases/latest)**. Pick `CfTunnel-v1.12.apk` under *Assets*.
 
 **Install:** download → allow *install unknown apps* → open → set local port → **Start tunnel** → **Copy URL + token**.
 
 Verify the download:
 ```bash
-sha256sum CfTunnel-v1.11.apk
+sha256sum CfTunnel-v1.12.apk
 # f65ae1df7290e54f9ac97548a68e73938450b2ee40933530f36286dd4b4eb7ed
 ```
 

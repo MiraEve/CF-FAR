@@ -18,3 +18,8 @@ only to the original CF-FAR source code.
    Stored at app/assets/cacerts.pem as a fallback trust store.
 
 3. Android SDK build tools, used at build time only, are not redistributed.
+
+Full license texts are shipped in licenses/ :
+  licenses/Apache-2.0.txt   (cloudflared)
+  licenses/MPL-2.0.txt      (Mozilla CA bundle)
+  licenses/README.md        (modification notice + trademark disclaimer)

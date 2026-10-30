@@ -2,6 +2,34 @@
 
 All notable changes to CF-FAR. Versions follow `MAJOR.MINOR`, `versionCode` is monotonic.
 
+## [1.12] — 2026-10-30
+
+### Fixed
+- **The token status line never updated.** `tvTokenState` was inflated and then never
+  written to, so the UI kept showing the static "令牌: 未启用" from the layout no matter
+  what you typed. You could not tell whether the gateway was armed — the exact confusion
+  that has bitten this project before. It is now driven by a live four-state indicator:
+  - empty → **red** `⚠️ 令牌: 未启用 —— 任何人拿到地址即可访问`
+  - filled, tunnel down → **green** `🔒 令牌: 已填写（N 位），点「启动隧道」后生效`
+  - running and matching → **green** `🔒 令牌: 已启用（N 位）· 生效中`
+  - running but edited since start → **orange** `⚠️ 令牌已修改，当前运行的是旧令牌（N 位）`
+- **Same-length token swaps are now detected.** Comparison uses a SHA-256 fingerprint of
+  the token that is actually loaded by the service (`activeTokenSig`), not just its length,
+  so changing `aaaa…` to `bbbb…` while running is flagged instead of silently ignored.
+  The fingerprint is compared locally only: it is never logged, stored or transmitted.
+
+### Added
+- **Version label** on screen (`v1.12 · arm64-v8a`, read from `PackageManager`), so an
+  installed build can be identified at a glance.
+- `licenses/` with the full Apache-2.0 and MPL-2.0 texts plus the Apache-2.0 §4(b)
+  modification notice for the patched `cloudflared` binary.
+
+### Changed
+- Removed duplicated `findViewById` / listener / `setText` blocks left over in
+  `MainActivity.onCreate()` and `loadPrefs()`.
+- Unified the default local port to `8888` (`startTunnel()` said `8080`, the rest said `8888`).
+- Dropped the Sponsorship section and `.github/FUNDING.yml`.
+
 ## [1.11] — 2026-10-30
 
 ### Fixed

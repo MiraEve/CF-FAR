@@ -117,8 +117,18 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="令牌: 未启用"
-        android:textSize="11sp"
+        android:textColor="#D50000"
+        android:textSize="12sp"
         android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvVersion"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="end"
+        android:text="v1.12"
+        android:textColor="#9E9E9E"
+        android:textSize="10sp" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -254,3 +264,4 @@
     </ScrollView>
 
 </LinearLayout>
+

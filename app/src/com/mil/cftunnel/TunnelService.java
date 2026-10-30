@@ -50,6 +50,8 @@ public class TunnelService extends Service {
     /** 实际生效的令牌状态 */
     public static volatile boolean tokenActive = false;
     public static volatile int tokenLen = 0;
+    /** 当前真正生效的令牌指纹（SHA-256 前 8 字节 hex），用于判断"改了令牌但没重启" */
+    public static volatile String activeTokenSig = "";
 
     private static final String CHANNEL_ID = "cf_tunnel";
     private static final int NOTIF_ID = 1001;
@@ -144,6 +146,28 @@ public class TunnelService extends Service {
         return c;
     }
 
+    /** 令牌指纹：只用于本地比对，不落盘、不打印，无法逆推原文 */
+    public static String tokenSig(String t) {
+        if (t == null) {
+            return "";
+        }
+        t = t.trim();
+        if (t.length() == 0) {
+            return "";
+        }
+        try {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] d = md.digest(t.getBytes("UTF-8"));
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < 8; i++) {
+                sb.append(String.format("%02x", d[i]));
+            }
+            return sb.toString();
+        } catch (Throwable e) {
+            return "len" + t.length();
+        }
+    }
+
     private void startTunnel(Config c) {
         try {
             Logger.log("sys", "===== 启动隧道 =====");
@@ -164,6 +188,7 @@ public class TunnelService extends Service {
             String tkRaw = c.token == null ? "" : c.token.trim();
             tokenActive = tkRaw.length() > 0;
             tokenLen = tkRaw.length();
+            activeTokenSig = tokenSig(tkRaw);
             if (tkRaw.length() == 0) {
                 Logger.log("sys", "访问令牌: 未启用 —— 任何拿到地址的人都可以访问");
             } else {
@@ -775,3 +800,4 @@ public class TunnelService extends Service {
         return null;
     }
 }
+

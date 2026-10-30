@@ -24,6 +24,7 @@ public class MainActivity extends Activity {
     private EditText etToken;
     private TextView tvAlert;
     private TextView tvTokenState;
+    private TextView tvVersion;
     private android.widget.CheckBox cbUnlimited;
     private int lastSeenAccess = 0;
     private Intent pendingStart;
@@ -76,6 +77,8 @@ public class MainActivity extends Activity {
         etToken = (EditText) findViewById(R.id.etToken);
         tvAlert = (TextView) findViewById(R.id.tvAlert);
         tvTokenState = (TextView) findViewById(R.id.tvTokenState);
+        tvVersion = (TextView) findViewById(R.id.tvVersion);
+        tvVersion.setText("v" + appVersion() + " · " + android.os.Build.SUPPORTED_ABIS[0]);
         cbUnlimited = (android.widget.CheckBox) findViewById(R.id.cbUnlimited);
         tvAlert.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -85,6 +88,7 @@ public class MainActivity extends Activity {
         findViewById(R.id.btnGenToken).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 etToken.setText(genToken());
+                updateTokenState();
                 toast("已生成 32 位随机令牌（约 190 bit 熵）");
             }
         });
@@ -93,11 +97,13 @@ public class MainActivity extends Activity {
                 selfTest();
             }
         });
-        etToken = (EditText) findViewById(R.id.etToken);
-        tvAlert = (TextView) findViewById(R.id.tvAlert);
-        tvAlert.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                tvAlert.setVisibility(View.GONE);
+        etToken.addTextChangedListener(new android.text.TextWatcher() {
+            public void afterTextChanged(android.text.Editable s) {
+                updateTokenState();
+            }
+            public void beforeTextChanged(CharSequence s, int a, int b, int c) {
+            }
+            public void onTextChanged(CharSequence s, int a, int b, int c) {
             }
         });
         etHost = (EditText) findViewById(R.id.etHost);
@@ -155,7 +161,6 @@ public class MainActivity extends Activity {
         });
 
         lastSeenAccess = TunnelService.accessCount;
-        lastSeenAccess = TunnelService.accessCount;
         Logger.addListener(logListener);
         dirty = true;
         ui.post(refresher);
@@ -168,7 +173,6 @@ public class MainActivity extends Activity {
         etTargetPort.setText(String.valueOf(sp.getInt("targetPort", 8080)));
         etToken.setText(sp.getString("token", ""));
         cbUnlimited.setChecked(sp.getBoolean("unlimitedAttack", false));
-        etToken.setText(sp.getString("token", ""));
         String p = sp.getString("protocol", "http2");
         if ("quic".equals(p)) {
             rgProtocol.check(R.id.rbQuic);
@@ -209,7 +213,7 @@ public class MainActivity extends Activity {
 
     private void startTunnel() {
         Config c = new Config();
-        int lp = parseInt(etLocalPort, 8080, "本地端口");
+        int lp = parseInt(etLocalPort, 8888, "本地端口");
         if (lp < 0) {
             return;
         }
@@ -277,6 +281,7 @@ public class MainActivity extends Activity {
     }
 
     private void refreshStatus() {
+        updateTokenState();
         if (TunnelService.accessCount != lastSeenAccess) {
             lastSeenAccess = TunnelService.accessCount;
             showAccessAlert();
@@ -301,6 +306,46 @@ public class MainActivity extends Activity {
             tvUrl.setText(u + "\n（点击复制）");
         } else if (s == TunnelService.STATE_IDLE) {
             tvUrl.setText("—");
+        }
+    }
+
+    /**
+     * 令牌状态：四态实时反馈。
+     * A 空          -> 红色：未启用
+     * B 有令牌/未跑 -> 绿色：已填写，启动后生效
+     * C 运行中且一致-> 绿色：已启用（N 位）生效中
+     * D 运行中但不一致 -> 橙色：改了没重启
+     */
+    private void updateTokenState() {
+        if (tvTokenState == null || etToken == null) {
+            return;
+        }
+        String t = etToken.getText().toString().trim();
+        boolean running = (TunnelService.state == TunnelService.STATE_STARTING
+                || TunnelService.state == TunnelService.STATE_RUNNING);
+        boolean same = TunnelService.tokenSig(t).equals(TunnelService.activeTokenSig);
+        if (t.length() == 0) {
+            tvTokenState.setTextColor(0xFFD50000);
+            tvTokenState.setText("⚠️ 令牌: 未启用 —— 任何人拿到地址即可访问");
+        } else if (!running) {
+            tvTokenState.setTextColor(0xFF2E7D32);
+            tvTokenState.setText("🔒 令牌: 已填写（" + t.length() + " 位），点「启动隧道」后生效");
+        } else if (same && TunnelService.tokenActive) {
+            tvTokenState.setTextColor(0xFF2E7D32);
+            tvTokenState.setText("🔒 令牌: 已启用（" + TunnelService.tokenLen + " 位）· 生效中");
+        } else {
+            tvTokenState.setTextColor(0xFFEF6C00);
+            tvTokenState.setText("⚠️ 令牌已修改，当前运行的是旧令牌（" + TunnelService.tokenLen
+                    + " 位）—— 点「启动隧道」重启后生效");
+        }
+    }
+
+    /** 从系统读版本号，避免源码和实际安装包对不上 */
+    private String appVersion() {
+        try {
+            return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+        } catch (Throwable e) {
+            return "?";
         }
     }
 
@@ -442,6 +487,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        updateTokenState();
         refreshStatus();
     }
 
@@ -452,3 +498,4 @@ public class MainActivity extends Activity {
         super.onDestroy();
     }
 }
+
