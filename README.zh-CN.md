@@ -5,6 +5,7 @@
 把手机本地或局域网里的任意服务，通过 Cloudflare 临时隧道暴露到公网 —— 不需要账号、不需要域名、不需要服务器。内置访问令牌网关、防爆破锁定和实时访问日志。
 
 [English](README.md) · [简体中文](README.zh-CN.md)
+
 ## ⬇️ 下载
 
 [![下载 APK](https://img.shields.io/badge/⬇_下载-CfTunnel--v1.11.apk-2ea44f?style=for-the-badge&logo=android&logoColor=white)](https://github.com/MiraEve/CF-FAR/releases/latest/download/CfTunnel-v1.11.apk)
