@@ -213,12 +213,24 @@ public final class PortForwarder {
                     return;
                 }
 
-                if (!authorized(head, path)) {
+                int auth = checkAuth(head, path);
+                if (auth != AUTH_OK) {
                     if (unlimitedAttack) {
                         Logger.log("fwd", "拦截(无限模式)  " + method + " " + path
                                 + (clientIp != null ? "  来源 " + clientIp : ""));
                         if (!selfTest) {
                             notifyAccess(method, path + "  无限模式", false,
+                                    clientIp == null ? "--" : clientIp);
+                        }
+                        reject(in, 401, "{\"error\":\"unauthorized\"}");
+                        return;
+                    }
+                    if (auth == AUTH_NO_TOKEN) {
+                        // 没有令牌：只拒绝，不计数。计数器留给真正在猜令牌的人。
+                        Logger.log("fwd", "拒绝无令牌请求（不计数）  " + method + " " + path
+                                + (clientIp != null ? "  来源 " + clientIp : ""));
+                        if (!selfTest) {
+                            notifyAccess(method, path + "  无令牌", false,
                                     clientIp == null ? "--" : clientIp);
                         }
                         reject(in, 401, "{\"error\":\"unauthorized\"}");
@@ -426,14 +438,25 @@ public final class PortForwarder {
         return null;
     }
 
+    /** 鉴权结果：区分「没带令牌」和「带了错令牌」——两者的风险完全不同 */
+    private static final int AUTH_OK = 0;
+    private static final int AUTH_NO_TOKEN = 1;
+    private static final int AUTH_BAD_TOKEN = 2;
+
     /**
      * 严格鉴权：header 精确取值比较 + query 参数名精确匹配，不做任何子串匹配。
+     *
+     * 返回值比 boolean 多一档，因为爆破计数只应该记「提交了错令牌」的请求。
+     * 浏览器打开链接时会自动请求 /favicon.ico、/apple-touch-icon.png 等，这些请求
+     * 天然不带令牌；把它们计入失败次数，会让正常用户打开 5 次链接就锁死自己 60 秒。
+     * 而不带令牌的请求无论如何都进不来，对爆破者没有任何价值，所以不该计数。
      */
-    private boolean authorized(byte[] head, String path) {
+    private int checkAuth(byte[] head, String path) {
         String tk = token;
         if (tk == null || tk.length() == 0) {
-            return true;
+            return AUTH_OK;
         }
+        boolean presented = false;      // 是否提交过令牌（无论对错）
         try {
             String h = new String(head, "ISO-8859-1");
             String[] lines = h.split("\r\n");
@@ -446,36 +469,41 @@ public final class PortForwarder {
                 String k = ln.substring(0, c).trim().toLowerCase(Locale.US);
                 String v = ln.substring(c + 1).trim();
                 if (k.equals("x-auth-token")) {
+                    presented = true;
                     if (v.equals(tk)) {
-                        return true;
+                        return AUTH_OK;
                     }
                 } else if (k.equals("authorization")) {
                     int sp = v.indexOf(' ');
                     if (sp > 0) {
                         String scheme = v.substring(0, sp);
-                        String val = v.substring(sp + 1).trim();
-                        if (scheme.equalsIgnoreCase("bearer") && val.equals(tk)) {
-                            return true;
+                        if (scheme.equalsIgnoreCase("bearer")) {
+                            presented = true;
+                            String val = v.substring(sp + 1).trim();
+                            if (val.equals(tk)) {
+                                return AUTH_OK;
+                            }
                         }
                     }
                 }
             }
-            if (headerOnly) {
-                return false;   // 仅 Header 模式：URL 里的令牌一律不认
-            }
-            String qv = queryParam(path, "token");
-            if (qv != null) {
-                if (qv.equals(tk)) {
-                    return true;
+            if (!headerOnly) {
+                String qv = queryParam(path, "token");
+                if (qv != null) {
+                    presented = true;
+                    if (qv.equals(tk)) {
+                        return AUTH_OK;
+                    }
+                    String dv = urlDecode(qv);
+                    if (!dv.equals(qv) && dv.equals(tk)) {
+                        return AUTH_OK;
+                    }
                 }
-                String dv = urlDecode(qv);
-                if (!dv.equals(qv) && dv.equals(tk)) {
-                    return true;
-                }
             }
+            // 仅 Header 模式下 URL 里的令牌不算「提交过」——那个载体是被主动禁用的
         } catch (Throwable ignored) {
         }
-        return false;
+        return presented ? AUTH_BAD_TOKEN : AUTH_NO_TOKEN;
     }
 
     /** 从路径里取指定 query 参数（参数名必须完全相等，避免 xtoken= 之类误匹配） */

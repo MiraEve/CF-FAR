@@ -2,6 +2,33 @@
 
 All notable changes to CF-FAR. Versions follow `MAJOR.MINOR`, `versionCode` is monotonic.
 
+## [1.17] — 2026-10-31
+
+### Fixed — **opening a link could lock you out of your own tunnel**
+- **Browser sub-requests counted as brute-force attempts.** Every `GET /favicon.ico`,
+  `/apple-touch-icon.png`, `/manifest.json` that a browser fires automatically arrives *without*
+  the token (they are separate requests; the `?token=` only exists on the URL you typed). Each one
+  was a 401 that incremented the failure counter. Five of them — trivially reached by opening the
+  link a couple of times, or once with a browser that prefetches — hit `MAX_FAIL` and locked the
+  gateway for 60 s. During that window **even a correct token got `429 {"error":"locked"}`**.
+  Reproduced live against a real instance: `favicon1..4 → 401`, `favicon5..6 → 429`, then
+  `?token=<correct> → 429`.
+- **Fix:** `authorized()` became `checkAuth()` returning three states instead of a boolean —
+  `AUTH_OK` / `AUTH_NO_TOKEN` / `AUTH_BAD_TOKEN`. The failure counter now advances **only** on
+  `AUTH_BAD_TOKEN`, i.e. only when a token was actually supplied and was wrong. A request with no
+  token anywhere is refused but never counted. Rationale: an unauthenticated request can never
+  succeed, so it has no brute-force value; counting it only punishes legitimate visitors.
+- In header-only mode a `?token=` in the URL is deliberately *not* treated as "token presented"
+  either — that carrier is switched off on purpose, and treating it as an attempt would let a
+  stale bookmarked link lock the owner out.
+
+### Verified
+- 16/16 logic tests: three-state classification (8), header-only `?token=` handling (2),
+  incident repro — 8 consecutive tokenless requests never lock and a correct token still returns
+  200 (3), real brute force still locks at the 5th wrong token (2), mixed attacker + browser
+  traffic (1).
+- Protection is unchanged for actual guessing: 5 wrong tokens still produce `429`.
+
 ## [1.16] — 2026-10-31
 
 Two defects found while auditing why "turn off header-only, then open the link" failed.
