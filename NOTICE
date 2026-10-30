@@ -1,0 +1,20 @@
+CF-FAR
+Copyright (c) 2026 MiraEve
+
+This product bundles or downloads the following third-party components.
+They remain under their own licenses; the MIT license in LICENSE applies
+only to the original CF-FAR source code.
+
+1. cloudflared
+   Apache License 2.0 — Copyright (c) Cloudflare, Inc.
+   https://github.com/cloudflare/cloudflared
+   Downloaded at build time by scripts/fetch-cloudflared.sh; not stored in
+   this repository. The binary shipped inside a built APK is patched in one
+   place (the resolv.conf path, 16 bytes, same length) to work on Android.
+
+2. Mozilla CA Certificate Bundle
+   Mozilla Public License 2.0
+   https://curl.se/ca/cacert.pem
+   Stored at app/assets/cacerts.pem as a fallback trust store.
+
+3. Android SDK build tools, used at build time only, are not redistributed.

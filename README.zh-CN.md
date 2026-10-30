@@ -128,7 +128,7 @@ Cloudflare 边缘  ──隧道 (HTTP/2)──►  cloudflared（内嵌，已打
 
 [MIT](LICENSE) © MiraEve
 
-内嵌的第三方组件：
+内嵌的第三方组件（完整声明见 [NOTICE](NOTICE)）：
 
 - **cloudflared** —— Apache-2.0，© Cloudflare, Inc.，构建时下载并原地打补丁
 - **Mozilla CA bundle** —— MPL-2.0，作为兜底证书集

@@ -137,7 +137,7 @@ repository small and the binary auditable.
 
 [MIT](LICENSE) © MiraEve
 
-Bundled third-party components:
+Bundled third-party components (full text in [NOTICE](NOTICE)):
 
 - **cloudflared** — Apache-2.0, © Cloudflare, Inc. Downloaded at build time, patched in place.
 - **Mozilla CA bundle** — MPL-2.0, used as a fallback certificate set.
