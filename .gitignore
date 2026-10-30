@@ -1,0 +1,36 @@
+# Build outputs
+build/
+gen/
+res.zip
+base.apk
+u.apk
+a.apk
+classes.dex
+cls/
+*.apk
+*.apk.idsig
+
+# Fetched third-party binary (produced by scripts/fetch-cloudflared.sh)
+app/assets/cloudflared
+
+# Signing material — NEVER commit these
+*.keystore
+*.jks
+*.p12
+*.pfx
+keystore.properties
+signing.properties
+
+# Local secrets / notes
+.env
+*.local
+notes/
+token.txt
+
+# Editors / OS
+.idea/
+.vscode/
+*.iml
+*.swp
+.DS_Store
+Thumbs.db
