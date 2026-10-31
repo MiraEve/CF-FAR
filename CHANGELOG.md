@@ -2,6 +2,29 @@
 
 All notable changes to CF-FAR. Versions follow `MAJOR.MINOR`, `versionCode` is monotonic.
 
+## [1.19] — 2026-10-31
+
+### Added
+- **Live link-latency readout.** A background thread issues a `HEAD` request through the public
+  tunnel URL and shows the round-trip time plus a health verdict (`优秀` / `良好` / `一般` / `较差`,
+  switching to `超时 / 链路无响应` on failure). This is HTTP round-trip, not ICMP — it measures the
+  path a real request takes, edge included.
+- Smarter log auto-scroll: the panel now stays where you scrolled to if you have scrolled up, and
+  only follows new lines when you are already at the bottom.
+
+### Fixed
+- **The probe was being treated as an unauthenticated attack.** Every probe carries no token, so it
+  hit the gateway as `AUTH_NO_TOKEN`. Since 1.17 that no longer counts toward the lockout, but it
+  still wrote a log line and fired the red access banner — one every few seconds, forever.
+  The probe now sends `X-Self-Test: 1`, and the gateway skips both the log line and the banner for
+  self-test traffic.
+- **Probe interval 5 s → 15 s, and paused while the UI is in the background.** A permanent 5-second
+  HTTPS request means a TLS handshake every 5 seconds — roughly 17 000 per day, keeping the radio
+  awake and burning mobile data on a screen nobody is looking at. It now probes only while the app
+  is in the foreground and at a third of the rate.
+- `HttpURLConnection` is still `disconnect()`-ed in a `finally` block, and the worker is a daemon
+  thread that exits on `onDestroy` — no connection or thread leak from Activity recreation.
+
 ## [1.18] — 2026-10-31
 
 ### Changed

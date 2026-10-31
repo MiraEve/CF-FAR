@@ -16,6 +16,8 @@ import android.widget.EditText;
 import android.widget.RadioGroup;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
@@ -42,6 +44,14 @@ public class MainActivity extends Activity {
     private ScrollView svLog;
     private Button btnStart;
     private Button btnStop;
+    private TextView tvLatency;
+    private TextView tvLatencyState;
+    private volatile boolean latencyLoop = true;
+    /** 界面不在前台时暂停探测：既省流量也省电 */
+    private volatile boolean latencyPaused = false;
+    private volatile String latencyUrl = "";
+    private volatile long latencyMs = -1L;
+    private volatile boolean latencyTimeout = false;
 
     private boolean autoScroll = true;
     private volatile boolean dirty;
@@ -57,12 +67,12 @@ public class MainActivity extends Activity {
         public void run() {
             if (dirty) {
                 dirty = false;
+                boolean wasAtBottom = svLog.getChildAt(0) == null ||
+                        svLog.getChildAt(0).getBottom() - (svLog.getScrollY() + svLog.getHeight()) < 48;
                 tvLog.setText(Logger.tail(600));
-                if (autoScroll) {
+                if (autoScroll && wasAtBottom) {
                     svLog.post(new Runnable() {
-                        public void run() {
-                            svLog.fullScroll(View.FOCUS_DOWN);
-                        }
+                        public void run() { svLog.fullScroll(View.FOCUS_DOWN); }
                     });
                 }
             }
@@ -150,6 +160,24 @@ public class MainActivity extends Activity {
         tvUrl = (TextView) findViewById(R.id.tvUrl);
         tvLog = (TextView) findViewById(R.id.tvLog);
         svLog = (ScrollView) findViewById(R.id.svLog);
+        tvLatency = (TextView) findViewById(R.id.tvLatency);
+        tvLatencyState = (TextView) findViewById(R.id.tvLatencyState);
+        svLog.setOnTouchListener(new View.OnTouchListener() {
+            public boolean onTouch(View v, android.view.MotionEvent event) {
+                if (event.getAction() == android.view.MotionEvent.ACTION_MOVE || event.getAction() == android.view.MotionEvent.ACTION_DOWN) {
+                    v.getParent().requestDisallowInterceptTouchEvent(true);
+                } else if (event.getAction() == android.view.MotionEvent.ACTION_UP || event.getAction() == android.view.MotionEvent.ACTION_CANCEL) {
+                    v.getParent().requestDisallowInterceptTouchEvent(false);
+                }
+                return false;
+            }
+        });
+        svLog.setOnScrollChangeListener(new View.OnScrollChangeListener() {
+            public void onScrollChange(View v, int x, int y, int oldX, int oldY) {
+                autoScroll = svLog.getChildAt(0) == null ||
+                        svLog.getChildAt(0).getBottom() - (y + svLog.getHeight()) < 48;
+            }
+        });
         btnStart = (Button) findViewById(R.id.btnStart);
         btnStop = (Button) findViewById(R.id.btnStop);
 
@@ -211,6 +239,7 @@ public class MainActivity extends Activity {
         Logger.addListener(logListener);
         dirty = true;
         ui.post(refresher);
+        startLatencyMonitor();
     }
 
     /** 隧道跑着的时候，改了生效条件就自动重启 —— 否则网关用的还是老配置 */
@@ -392,6 +421,72 @@ public class MainActivity extends Activity {
         tvAuditAlert.setVisibility(cbUnlimited.isChecked() ? View.VISIBLE : View.GONE);
     }
 
+    /** 通过已生成的公网隧道地址做 HTTP 往返探测；不是 ICMP ping。 */
+    private void startLatencyMonitor() {
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                while (latencyLoop) {
+                    if (latencyPaused) {
+                        try { Thread.sleep(1000); } catch (InterruptedException ignored) { }
+                        continue;
+                    }
+                    String current = TunnelService.publicUrl;
+                    if (TunnelService.state == TunnelService.STATE_RUNNING && current != null && current.length() > 0) {
+                        long started = android.os.SystemClock.elapsedRealtime();
+                        HttpURLConnection c = null;
+                        try {
+                            c = (HttpURLConnection) new URL(current).openConnection();
+                            c.setRequestMethod("HEAD");
+                            // 打上自检标记：网关据此跳过日志与告警，
+                            // 否则每探测一次就会在日志里留一条"拒绝无令牌请求"、红条闪一下
+                            c.setRequestProperty("X-Self-Test", "1");
+                            c.setConnectTimeout(3500);
+                            c.setReadTimeout(3500);
+                            c.setUseCaches(false);
+                            c.setInstanceFollowRedirects(true);
+                            c.getResponseCode(); // 401/403 也代表链路已响应
+                            latencyMs = android.os.SystemClock.elapsedRealtime() - started;
+                            latencyTimeout = false;
+                            latencyUrl = current;
+                        } catch (Exception e) {
+                            latencyMs = -1L;
+                            latencyTimeout = true;
+                            latencyUrl = current;
+                        } finally {
+                            if (c != null) c.disconnect();
+                        }
+                    } else {
+                        latencyMs = -1L;
+                        latencyTimeout = false;
+                        latencyUrl = "";
+                    }
+                    ui.post(new Runnable() { public void run() { updateLatencyView(); } });
+                    try { Thread.sleep(15000); } catch (InterruptedException ignored) { }
+                }
+            }
+        }, "tunnel-latency");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    private void updateLatencyView() {
+        if (tvLatency == null || tvLatencyState == null) return;
+        if (latencyUrl.length() == 0) {
+            tvLatency.setText("-- ms");
+            tvLatencyState.setText("等待隧道连接");
+            tvLatencyState.setTextColor(0xFF8993A5);
+        } else if (latencyTimeout || latencyMs < 0) {
+            tvLatency.setText("超时");
+            tvLatencyState.setText("链路无响应");
+            tvLatencyState.setTextColor(0xFFD14343);
+        } else {
+            tvLatency.setText(latencyMs + " ms");
+            String health = latencyMs < 100 ? "优秀" : latencyMs < 250 ? "良好" : latencyMs < 500 ? "一般" : "较差";
+            tvLatencyState.setText("网络健康 · " + health);
+            tvLatencyState.setTextColor(latencyMs < 250 ? 0xFF16845B : latencyMs < 500 ? 0xFFB7791F : 0xFFD14343);
+        }
+    }
+
     private void refreshStatus() {
         updateTokenState();
         updateAuditState();
@@ -423,6 +518,7 @@ public class MainActivity extends Activity {
                 tvState.setText("状态: 未运行");
                 break;
         }
+        updateLatencyView();
         if (u != null && u.length() > 0) {
             tvUrl.setText(u + "\n（点击复制）");
         } else if (s == TunnelService.STATE_IDLE) {
@@ -647,14 +743,21 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        latencyPaused = false;
         updateTokenState();
         refreshStatus();
     }
 
     @Override
+    protected void onPause() {
+        latencyPaused = true;
+        super.onPause();
+    }
+
     protected void onDestroy() {
         Logger.removeListener(logListener);
         ui.removeCallbacks(refresher);
+        latencyLoop = false;
         super.onDestroy();
     }
 }
