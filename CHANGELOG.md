@@ -2,6 +2,22 @@
 
 All notable changes to CF-FAR. Versions follow `MAJOR.MINOR`, `versionCode` is monotonic.
 
+## [1.18] — 2026-10-31
+
+### Changed
+- **UI rebuilt in an iOS-style visual language.** The single flat `LinearLayout` with default
+  Material widgets is replaced by a card-based layout: rounded surfaces, a grouped settings block,
+  a monospace log panel with its own background, and typographic hierarchy instead of raw widget
+  defaults. New resources: `values/styles.xml` (`AppTheme`) and eight shape drawables
+  (`bg_card`, `bg_input`, `bg_log`, `bg_page`, `bg_primary_button`, `bg_secondary_button`,
+  `bg_status`, `bg_warning`).  `main.xml` shrank from ~250 lines to 95 by moving styling into
+  those resources.
+- **No behavioural change.** Every security fix from 1.7 through 1.17 is carried over verbatim and
+  re-verified in the built dex: `checkAuth()` three-state result, `AUTH_NO_TOKEN` not counting
+  toward the lockout, `statusText()` status-line mapping, `backend_unreachable` JSON 502,
+  `MAX_CONN` bound, `HEAD_DEADLINE_MS`, `headerOnlyActive` mode sync, `tvHeaderOnlyState`.
+  All 28 view ids referenced by `MainActivity` exist in the new layout.
+
 ## [1.17] — 2026-10-31
 
 ### Fixed — **opening a link could lock you out of your own tunnel**

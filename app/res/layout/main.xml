@@ -1,333 +1,95 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="10dp"
-    android:background="#FAFAFA">
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="#F4F6FA">
 
-    <TextView
-        android:id="@+id/tvState"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="状态: 未运行"
-        android:textSize="17sp"
-        android:textStyle="bold"
-        android:textColor="#1A237E" />
+    <ScrollView android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="1" android:fillViewport="true" android:clipToPadding="false">
+      <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+          android:orientation="vertical" android:paddingLeft="18dp" android:paddingRight="18dp"
+          android:paddingTop="18dp" android:paddingBottom="18dp">
 
-    <TextView
-        android:id="@+id/tvUrl"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:layout_marginBottom="6dp"
-        android:text="—"
-        android:textColor="#00695C"
-        android:textIsSelectable="true"
-        android:textSize="13sp" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:gravity="center_vertical" android:orientation="horizontal" android:paddingBottom="16dp">
+          <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="CF TUNNEL" android:textColor="#2563EB" android:textSize="10sp" android:textStyle="bold" android:letterSpacing="0.16" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="隧道控制台" android:textColor="#172033" android:textSize="26sp" android:textStyle="bold" />
+            <TextView android:id="@+id/tvVersion" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="v1.17 · arm64-v8a" android:textColor="#8993A5" android:textSize="11sp" android:layout_marginTop="2dp" />
+          </LinearLayout>
+          <TextView android:layout_width="42dp" android:layout_height="42dp" android:gravity="center" android:text="CF" android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="15sp" android:background="@drawable/bg_primary_button" />
+        </LinearLayout>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="2dp"
-        android:orientation="horizontal">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
+            android:padding="16dp" android:background="@drawable/bg_status">
+          <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="运行状态" android:textColor="#65748B" android:textSize="12sp" />
+          <TextView android:id="@+id/tvState" android:layout_width="match_parent" android:layout_height="wrap_content"
+              android:text="状态: 未运行" android:textColor="#173A78" android:textSize="21sp" android:textStyle="bold" android:layout_marginTop="3dp" />
+          <TextView android:id="@+id/tvUrl" android:layout_width="match_parent" android:layout_height="wrap_content"
+              android:layout_marginTop="9dp" android:padding="11dp" android:background="#FFFFFF"
+              android:text="等待启动后生成隧道地址" android:textColor="#176B55" android:textIsSelectable="true" android:textSize="13sp" />
+          <TextView android:id="@+id/tvCopyHint" android:layout_width="match_parent" android:layout_height="wrap_content"
+              android:layout_marginTop="7dp" android:text="点击地址可复制 · 链接适合临时访问 · Header 适合长期使用"
+              android:textColor="#77859A" android:textSize="10sp" />
+          <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="10dp">
+            <Button android:id="@+id/btnCopyUrl" android:layout_width="0dp" android:layout_height="42dp" android:layout_weight="1" android:text="复制链接" android:textSize="11sp" android:textColor="#FFFFFF" android:background="@drawable/bg_primary_button" android:backgroundTint="@null" />
+            <Button android:id="@+id/btnCopyHeader" android:layout_width="0dp" android:layout_height="42dp" android:layout_weight="1" android:layout_marginLeft="7dp" android:text="复制 Header" android:textSize="11sp" android:textColor="#24416F" android:background="@drawable/bg_secondary_button" android:backgroundTint="@null" />
+            <Button android:id="@+id/btnCopyCurl" android:layout_width="0dp" android:layout_height="42dp" android:layout_weight="1" android:layout_marginLeft="7dp" android:text="复制 curl" android:textSize="11sp" android:textColor="#24416F" android:background="@drawable/bg_secondary_button" android:backgroundTint="@null" />
+          </LinearLayout>
+        </LinearLayout>
 
-        <Button
-            android:id="@+id/btnCopyUrl"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="链接"
-            android:textSize="11sp" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="连接配置" android:textColor="#172033" android:textSize="17sp" android:textStyle="bold" android:layout_marginTop="20dp" android:layout_marginBottom="9dp" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp" android:background="@drawable/bg_card">
+          <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="本地监听端口" android:textColor="#5F6B7D" android:textSize="12sp" />
+          <EditText android:id="@+id/etLocalPort" android:layout_width="match_parent" android:layout_height="46dp" android:layout_marginTop="5dp" android:paddingLeft="12dp" android:paddingRight="12dp" android:background="@drawable/bg_input" android:inputType="number" android:maxLength="5" android:textSize="15sp" android:textColor="#172033" />
+          <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="转发目标地址" android:textColor="#5F6B7D" android:textSize="12sp" android:layout_marginTop="12dp" />
+          <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="5dp">
+            <EditText android:id="@+id/etHost" android:layout_width="0dp" android:layout_height="46dp" android:layout_weight="1" android:paddingLeft="12dp" android:paddingRight="8dp" android:background="@drawable/bg_input" android:hint="127.0.0.1" android:textSize="14sp" android:textColor="#172033" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text=":" android:textColor="#8993A5" android:textSize="18sp" android:paddingLeft="5dp" android:paddingRight="5dp" />
+            <EditText android:id="@+id/etTargetPort" android:layout_width="82dp" android:layout_height="46dp" android:paddingLeft="8dp" android:paddingRight="8dp" android:background="@drawable/bg_input" android:inputType="number" android:maxLength="5" android:hint="8080" android:textSize="14sp" android:textColor="#172033" />
+          </LinearLayout>
+        </LinearLayout>
 
-        <Button
-            android:id="@+id/btnCopyHeader"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Header"
-            android:textSize="11sp" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="访问安全" android:textColor="#172033" android:textSize="17sp" android:textStyle="bold" android:layout_marginTop="20dp" android:layout_marginBottom="9dp" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp" android:background="@drawable/bg_card">
+          <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="访问令牌" android:textColor="#5F6B7D" android:textSize="12sp" />
+          <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="5dp">
+            <EditText android:id="@+id/etToken" android:layout_width="0dp" android:layout_height="46dp" android:layout_weight="1" android:paddingLeft="12dp" android:paddingRight="8dp" android:background="@drawable/bg_input" android:hint="建议使用随机令牌" android:inputType="textVisiblePassword" android:textSize="13sp" android:textColor="#172033" />
+            <Button android:id="@+id/btnGenToken" android:layout_width="66dp" android:layout_height="44dp" android:layout_marginLeft="7dp" android:text="随机生成" android:textSize="10sp" android:textColor="#24416F" android:background="@drawable/bg_secondary_button" android:backgroundTint="@null" />
+            <Button android:id="@+id/btnSelfTest" android:layout_width="54dp" android:layout_height="44dp" android:layout_marginLeft="5dp" android:text="自检" android:textSize="10sp" android:textColor="#24416F" android:background="@drawable/bg_secondary_button" android:backgroundTint="@null" />
+          </LinearLayout>
+          <TextView android:id="@+id/tvTokenState" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="令牌: 未启用" android:textColor="#D14343" android:textSize="12sp" android:textStyle="bold" android:layout_marginTop="8dp" />
+          <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EDF0F5" android:layout_marginTop="12dp" android:layout_marginBottom="8dp" />
+          <CheckBox android:id="@+id/cbHeaderOnly" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="仅 Header 鉴权（禁用 URL Token）" android:textColor="#26364F" android:textSize="13sp" android:buttonTint="#2563EB" />
+          <TextView android:id="@+id/tvHeaderOnlyState" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="○ 未运行" android:textColor="#8993A5" android:textSize="11sp" android:textStyle="bold" android:layout_marginTop="3dp" />
+        </LinearLayout>
 
-        <Button
-            android:id="@+id/btnCopyCurl"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="curl"
-            android:textSize="11sp" />
-    </LinearLayout>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="传输协议" android:textColor="#172033" android:textSize="17sp" android:textStyle="bold" android:layout_marginTop="20dp" android:layout_marginBottom="9dp" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="14dp" android:background="@drawable/bg_card">
+          <RadioGroup android:id="@+id/rgProtocol" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+            <RadioButton android:id="@+id/rbHttp2" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:checked="true" android:text="HTTP/2 · 稳定" android:textColor="#26364F" android:textSize="13sp" android:buttonTint="#2563EB" />
+            <RadioButton android:id="@+id/rbQuic" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="QUIC · 加速" android:textColor="#26364F" android:textSize="13sp" android:buttonTint="#2563EB" />
+          </RadioGroup>
+          <CheckBox android:id="@+id/cbUnlimited" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="审计测试模式（关闭失败次数锁定）" android:textColor="#A44B16" android:textSize="12sp" android:buttonTint="#D97706" />
+          <TextView android:id="@+id/tvAuditAlert" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:background="@drawable/bg_warning" android:padding="10dp" android:text="⚠ 审计测试模式已开启：失败次数锁定已关闭。测试结束后建议关闭此模式。" android:textColor="#A44B16" android:textSize="11sp" android:textStyle="bold" android:visibility="gone" />
+        </LinearLayout>
 
-    <TextView
-        android:id="@+id/tvCopyHint"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="4dp"
-        android:text="链接=最短可点击（临时）· Header=长期使用 · curl=终端直连"
-        android:textColor="#9E9E9E"
-        android:textSize="10sp" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="18dp">
+          <Button android:id="@+id/btnStart" android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1" android:text="启动隧道" android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="15sp" android:background="@drawable/bg_primary_button" android:backgroundTint="@null" />
+          <Button android:id="@+id/btnStop" android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1" android:layout_marginLeft="10dp" android:text="停止" android:textColor="#34445D" android:textSize="15sp" android:background="@drawable/bg_secondary_button" android:backgroundTint="@null" />
+        </LinearLayout>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+        <TextView android:id="@+id/tvAlert" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:background="@drawable/bg_warning" android:padding="10dp" android:textColor="#B42318" android:textSize="12sp" android:textStyle="bold" android:visibility="gone" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="本地端口"
-            android:textSize="12sp" />
-
-        <EditText
-            android:id="@+id/etLocalPort"
-            android:layout_width="76dp"
-            android:layout_height="wrap_content"
-            android:inputType="number"
-            android:maxLength="5"
-            android:textSize="13sp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:text="目标"
-            android:textSize="12sp" />
-
-        <EditText
-            android:id="@+id/etHost"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:hint="127.0.0.1 / 192.168.1.5"
-            android:textSize="13sp" />
-
-        <EditText
-            android:id="@+id/etTargetPort"
-            android:layout_width="70dp"
-            android:layout_height="wrap_content"
-            android:inputType="number"
-            android:maxLength="5"
-            android:textSize="13sp" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="令牌"
-            android:textSize="12sp" />
-
-        <EditText
-            android:id="@+id/etToken"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:hint="访问令牌，留空=不校验（建议设置）"
-            android:inputType="textVisiblePassword"
-            android:textSize="13sp" />
-
-        <Button
-            android:id="@+id/btnGenToken"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minWidth="0dp"
-            android:paddingLeft="8dp"
-            android:paddingRight="8dp"
-            android:text="随机"
-            android:textSize="11sp" />
-
-        <Button
-            android:id="@+id/btnSelfTest"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minWidth="0dp"
-            android:paddingLeft="8dp"
-            android:paddingRight="8dp"
-            android:text="自检"
-            android:textSize="11sp" />
-    </LinearLayout>
-
-    <TextView
-        android:id="@+id/tvTokenState"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="令牌: 未启用"
-        android:textColor="#D50000"
-        android:textSize="12sp"
-        android:textStyle="bold" />
-
-    <CheckBox
-        android:id="@+id/cbHeaderOnly"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:text="仅 Header 鉴权（禁用 ?token= · 长期使用，防止令牌经 URL 泄露）"
-        android:textColor="#1565C0"
-        android:textSize="12sp" />
-
-    <TextView
-        android:id="@+id/tvHeaderOnlyState"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="○ 未运行"
-        android:textColor="#9E9E9E"
-        android:textSize="11sp"
-        android:textStyle="bold" />
-
-    <TextView
-        android:id="@+id/tvVersion"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="end"
-        android:text="v1.12"
-        android:textColor="#9E9E9E"
-        android:textSize="10sp" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-    <RadioGroup
-        android:id="@+id/rgProtocol"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:orientation="horizontal">
-
-        <RadioButton
-            android:id="@+id/rbHttp2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:checked="true"
-            android:text="HTTP2 稳定"
-            android:textSize="12sp" />
-
-        <RadioButton
-            android:id="@+id/rbQuic"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="QUIC 加速"
-            android:textSize="12sp" />
-    </RadioGroup>
-
-    </LinearLayout>
-
-    <CheckBox
-        android:id="@+id/cbUnlimited"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:text="无限攻击（关闭防爆破锁定，用于渗透测试）"
-        android:textColor="#D50000"
-        android:textSize="12sp" />
-
-    <TextView
-        android:id="@+id/tvAuditAlert"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:background="#FFF3E0"
-        android:padding="6dp"
-        android:text="⚠ 无限攻击模式已开启：防爆破锁定已关闭，令牌错误可无限次尝试。取消勾选上方「无限攻击」即可恢复。"
-        android:textColor="#EF6C00"
-        android:textSize="11sp"
-        android:textStyle="bold"
-        android:visibility="gone" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <Button
-            android:id="@+id/btnStart"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="启动隧道" />
-
-        <Button
-            android:id="@+id/btnStop"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="停止" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <Button
-            android:id="@+id/btnCopyLog"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="复制日志"
-            android:textSize="11sp" />
-
-        <Button
-            android:id="@+id/btnShareLog"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="导出日志"
-            android:textSize="11sp" />
-
-        <Button
-            android:id="@+id/btnClearLog"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="清空"
-            android:textSize="11sp" />
-    </LinearLayout>
-
-
-    <TextView
-        android:id="@+id/tvAlert"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:background="#FFEBEE"
-        android:padding="6dp"
-        android:textColor="#D50000"
-        android:textSize="12sp"
-        android:textStyle="bold"
-        android:visibility="gone" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="实时日志（点击下方按钮复制/导出）"
-        android:textColor="#666666"
-        android:textSize="11sp" />
-
-    <ScrollView
-        android:id="@+id/svLog"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:background="#111111"
-        android:padding="6dp">
-
-        <TextView
-            android:id="@+id/tvLog"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="#B2FF59"
-            android:textIsSelectable="true"
-            android:textSize="9sp"
-            android:typeface="monospace" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:layout_marginTop="22dp" android:layout_marginBottom="9dp">
+          <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="运行日志" android:textColor="#172033" android:textSize="17sp" android:textStyle="bold" />
+          <Button android:id="@+id/btnCopyLog" android:layout_width="wrap_content" android:layout_height="36dp" android:text="复制" android:textSize="10sp" android:textColor="#24416F" android:background="@drawable/bg_secondary_button" android:backgroundTint="@null" />
+          <Button android:id="@+id/btnShareLog" android:layout_width="wrap_content" android:layout_height="36dp" android:layout_marginLeft="5dp" android:text="导出" android:textSize="10sp" android:textColor="#24416F" android:background="@drawable/bg_secondary_button" android:backgroundTint="@null" />
+          <Button android:id="@+id/btnClearLog" android:layout_width="wrap_content" android:layout_height="36dp" android:layout_marginLeft="5dp" android:text="清空" android:textSize="10sp" android:textColor="#24416F" android:background="@drawable/bg_secondary_button" android:backgroundTint="@null" />
+        </LinearLayout>
+        <ScrollView android:id="@+id/svLog" android:layout_width="match_parent" android:layout_height="190dp" android:background="@drawable/bg_log" android:padding="12dp" android:fillViewport="true">
+          <TextView android:id="@+id/tvLog" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#A7F3D0" android:textIsSelectable="true" android:textSize="10sp" android:lineSpacingExtra="2dp" android:typeface="monospace" />
+        </ScrollView>
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="CF-FAR  ·  Secure tunnel console" android:gravity="center" android:textColor="#A0A9B8" android:textSize="10sp" android:paddingTop="16dp" android:paddingBottom="4dp" />
+      </LinearLayout>
     </ScrollView>
-
 </LinearLayout>
-
