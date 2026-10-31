@@ -2,6 +2,31 @@
 
 All notable changes to CF-FAR. Versions follow `MAJOR.MINOR`, `versionCode` is monotonic.
 
+## [1.20] — 2026-10-31
+
+### Changed
+- **Compact layout.** Tighter spacing, the settings block condensed, the log viewport given a
+  fixed 260 dp height so it no longer fights the page for vertical space.
+- **Delay readout re-implemented as TCP connect timing.** Instead of an HTTP `HEAD` through the
+  tunnel, the monitor now opens five TCP connections to the Cloudflare edge behind the tunnel
+  hostname (443), 180 ms apart, and reports the **median** connect time plus **jitter**
+  (max − min). DNS is resolved once per round, outside the timed section. A round counts as
+  failed only when fewer than 3 of 5 connects succeed, so one dropped SYN does not flip the
+  readout to red. This is TCP RTT to the edge — not ICMP, and not an end-to-end measurement of
+  the origin service — which the source comments state explicitly.
+- **New `LogScrollView`.** A `ScrollView` subclass that claims vertical gestures from its parent
+  on `ACTION_DOWN` (waiting until `MOVE` is too late — the outer `ScrollView` already intercepted)
+  and releases on `UP`/`CANCEL`. The log panel is now independently scrollable inside the page.
+
+### Fixed
+- **Background probing restored to paused.** The 1.19 build stopped the monitor while the UI was
+  in the background; this one had no `onPause` guard, so a round of five TCP connects ran every
+  8 s forever, screen off included. `latencyPaused` is back, set on `onPause`, cleared on
+  `onResume`.
+- **Self-test traffic silent again.** In header-only and no-token states, `X-Self-Test: 1`
+  requests no longer write an "unauthenticated request" log line — restoring the 1.19 behaviour
+  that this package had dropped.
+
 ## [1.19] — 2026-10-31
 
 ### Added

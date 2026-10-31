@@ -16,7 +16,9 @@ import android.widget.EditText;
 import android.widget.RadioGroup;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.URL;
 import android.widget.Toast;
 
@@ -47,13 +49,16 @@ public class MainActivity extends Activity {
     private TextView tvLatency;
     private TextView tvLatencyState;
     private volatile boolean latencyLoop = true;
-    /** 界面不在前台时暂停探测：既省流量也省电 */
+    /** 界面不在前台时暂停探测：TCP 连接同样会唤醒射频，后台跑没意义 */
     private volatile boolean latencyPaused = false;
     private volatile String latencyUrl = "";
     private volatile long latencyMs = -1L;
     private volatile boolean latencyTimeout = false;
+    private volatile int latencySamplesOk = 0;
+    private volatile long latencyJitterMs = -1L;
 
     private boolean autoScroll = true;
+    private volatile boolean logTouching = false;
     private volatile boolean dirty;
     private final Handler ui = new Handler(Looper.getMainLooper());
 
@@ -65,7 +70,7 @@ public class MainActivity extends Activity {
 
     private final Runnable refresher = new Runnable() {
         public void run() {
-            if (dirty) {
+            if (dirty && !logTouching) {
                 dirty = false;
                 boolean wasAtBottom = svLog.getChildAt(0) == null ||
                         svLog.getChildAt(0).getBottom() - (svLog.getScrollY() + svLog.getHeight()) < 48;
@@ -164,10 +169,11 @@ public class MainActivity extends Activity {
         tvLatencyState = (TextView) findViewById(R.id.tvLatencyState);
         svLog.setOnTouchListener(new View.OnTouchListener() {
             public boolean onTouch(View v, android.view.MotionEvent event) {
-                if (event.getAction() == android.view.MotionEvent.ACTION_MOVE || event.getAction() == android.view.MotionEvent.ACTION_DOWN) {
-                    v.getParent().requestDisallowInterceptTouchEvent(true);
-                } else if (event.getAction() == android.view.MotionEvent.ACTION_UP || event.getAction() == android.view.MotionEvent.ACTION_CANCEL) {
-                    v.getParent().requestDisallowInterceptTouchEvent(false);
+                int action = event.getActionMasked();
+                if (action == android.view.MotionEvent.ACTION_DOWN || action == android.view.MotionEvent.ACTION_MOVE) {
+                    logTouching = true;
+                } else if (action == android.view.MotionEvent.ACTION_UP || action == android.view.MotionEvent.ACTION_CANCEL) {
+                    logTouching = false;
                 }
                 return false;
             }
@@ -421,7 +427,11 @@ public class MainActivity extends Activity {
         tvAuditAlert.setVisibility(cbUnlimited.isChecked() ? View.VISIBLE : View.GONE);
     }
 
-    /** 通过已生成的公网隧道地址做 HTTP 往返探测；不是 ICMP ping。 */
+    /**
+     * Measures TCP connect time to the Cloudflare edge behind the public tunnel hostname.
+     * DNS lookup is deliberately outside the timed section; this is TCP RTT approximation,
+     * not ICMP ping and not an end-to-end measurement of the local origin service.
+     */
     private void startLatencyMonitor() {
         Thread t = new Thread(new Runnable() {
             public void run() {
@@ -430,41 +440,59 @@ public class MainActivity extends Activity {
                         try { Thread.sleep(1000); } catch (InterruptedException ignored) { }
                         continue;
                     }
-                    String current = TunnelService.publicUrl;
+                    final String current = TunnelService.publicUrl;
                     if (TunnelService.state == TunnelService.STATE_RUNNING && current != null && current.length() > 0) {
-                        long started = android.os.SystemClock.elapsedRealtime();
-                        HttpURLConnection c = null;
+                        long[] samples = new long[5];
+                        int ok = 0;
                         try {
-                            c = (HttpURLConnection) new URL(current).openConnection();
-                            c.setRequestMethod("HEAD");
-                            // 打上自检标记：网关据此跳过日志与告警，
-                            // 否则每探测一次就会在日志里留一条"拒绝无令牌请求"、红条闪一下
-                            c.setRequestProperty("X-Self-Test", "1");
-                            c.setConnectTimeout(3500);
-                            c.setReadTimeout(3500);
-                            c.setUseCaches(false);
-                            c.setInstanceFollowRedirects(true);
-                            c.getResponseCode(); // 401/403 也代表链路已响应
-                            latencyMs = android.os.SystemClock.elapsedRealtime() - started;
-                            latencyTimeout = false;
+                            URL parsed = new URL(current);
+                            String host = parsed.getHost();
+                            int port = parsed.getPort() > 0 ? parsed.getPort() : ("https".equalsIgnoreCase(parsed.getProtocol()) ? 443 : 80);
+                            // Resolve once per round so DNS latency does not pollute TCP connect timing.
+                            InetAddress[] addresses = InetAddress.getAllByName(host);
+                            for (int i = 0; i < 5 && latencyLoop; i++) {
+                                Socket socket = new Socket();
+                                long began = android.os.SystemClock.elapsedRealtime();
+                                try {
+                                    socket.connect(new InetSocketAddress(addresses[i % addresses.length], port), 2200);
+                                    samples[ok++] = android.os.SystemClock.elapsedRealtime() - began;
+                                } catch (Exception ignored) {
+                                    // A failed connect is counted as packet/connect loss for this round.
+                                } finally {
+                                    try { socket.close(); } catch (Exception ignored) { }
+                                }
+                                if (i < 4) try { Thread.sleep(180); } catch (InterruptedException ignored) { }
+                            }
+                            latencySamplesOk = ok;
                             latencyUrl = current;
+                            latencyTimeout = ok < 3; // Require a majority, not one lucky success.
+                            if (ok >= 3) {
+                                java.util.Arrays.sort(samples, 0, ok);
+                                latencyMs = samples[ok / 2];
+                                latencyJitterMs = samples[ok - 1] - samples[0];
+                            } else {
+                                latencyMs = -1L;
+                                latencyJitterMs = -1L;
+                            }
                         } catch (Exception e) {
-                            latencyMs = -1L;
-                            latencyTimeout = true;
                             latencyUrl = current;
-                        } finally {
-                            if (c != null) c.disconnect();
+                            latencySamplesOk = 0;
+                            latencyTimeout = true;
+                            latencyMs = -1L;
+                            latencyJitterMs = -1L;
                         }
                     } else {
                         latencyMs = -1L;
+                        latencySamplesOk = 0;
                         latencyTimeout = false;
+                        latencyJitterMs = -1L;
                         latencyUrl = "";
                     }
                     ui.post(new Runnable() { public void run() { updateLatencyView(); } });
-                    try { Thread.sleep(15000); } catch (InterruptedException ignored) { }
+                    try { Thread.sleep(8000); } catch (InterruptedException ignored) { }
                 }
             }
-        }, "tunnel-latency");
+        }, "edge-tcp-monitor");
         t.setDaemon(true);
         t.start();
     }
@@ -476,14 +504,14 @@ public class MainActivity extends Activity {
             tvLatencyState.setText("等待隧道连接");
             tvLatencyState.setTextColor(0xFF8993A5);
         } else if (latencyTimeout || latencyMs < 0) {
-            tvLatency.setText("超时");
-            tvLatencyState.setText("链路无响应");
+            tvLatency.setText("-- ms");
+            tvLatencyState.setText("边缘 TCP 连接失败 · 成功 " + latencySamplesOk + "/5");
             tvLatencyState.setTextColor(0xFFD14343);
         } else {
             tvLatency.setText(latencyMs + " ms");
-            String health = latencyMs < 100 ? "优秀" : latencyMs < 250 ? "良好" : latencyMs < 500 ? "一般" : "较差";
-            tvLatencyState.setText("网络健康 · " + health);
-            tvLatencyState.setTextColor(latencyMs < 250 ? 0xFF16845B : latencyMs < 500 ? 0xFFB7791F : 0xFFD14343);
+            String grade = latencyMs < 100 ? "很快" : latencyMs < 200 ? "良好" : latencyMs < 400 ? "一般" : latencyMs < 800 ? "偏慢" : "较慢";
+            tvLatencyState.setText("边缘 TCP · " + latencySamplesOk + "/5 · 抖动 " + latencyJitterMs + " ms · " + grade);
+            tvLatencyState.setTextColor(latencyMs < 200 ? 0xFF16845B : latencyMs < 800 ? 0xFF9A6700 : 0xFFD14343);
         }
     }
 

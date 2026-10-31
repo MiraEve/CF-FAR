@@ -227,7 +227,7 @@ public final class PortForwarder {
                     }
                     if (auth == AUTH_NO_TOKEN) {
                         // 没有令牌：只拒绝，不计数。计数器留给真正在猜令牌的人。
-                        // 自检/延迟探测带上 X-Self-Test: 1，完全静默，不写日志也不弹告警。
+                        // 自检流量（X-Self-Test: 1）完全静默，不写日志也不弹告警。
                         if (!selfTest) {
                             Logger.log("fwd", "拒绝无令牌请求（不计数）  " + method + " " + path
                                     + (clientIp != null ? "  来源 " + clientIp : ""));
